@@ -125,29 +125,37 @@ if (variantsExist === true) {
 }
 
 if (readsExist === true) {
-  var readsSvgContainer = d3.select("#readsArea")
-    .append("svg")
-      .attr("height", (readsHeight+base))
-      .attr("width", width);
 
-  var readsVertLine = readsSvgContainer.append('line')
-    .attr({
-      'x1': 50,
-      'y1': 0,
-      'x2': 50,
-      'y2': readsHeight
-    })
-    .attr("stroke", "#002900")
-    .attr("class", "verticalLine");
+  var readsSvgContainer = []
+  var samples = ["person1", "person2"]
 
-  readsSvgContainer.on('mousemove', function () {
-    var xPosition = d3.mouse(this)[0];
-    d3.selectAll(".verticalLine")
+  for (var i = 0; i < samples.length; i++) {
+    $("#readsArea").append("<div id=" + samples[i] + "class='sampleReads'></div>");
+    var selector = "#" + samples[i]
+    readsSvgContainer[i] = d3.select(selector)
+      .append("svg")
+        .attr("height", (readsHeight+base))
+        .attr("width", width);
+
+    var readsVertLine = readsSvgContainer[i].append('line')
       .attr({
-        "x1" : xPosition,
-        "x2" : xPosition
+        'x1': 50,
+        'y1': 0,
+        'x2': 50,
+        'y2': readsHeight
       })
-  });
+      .attr("stroke", "#002900")
+      .attr("class", "verticalLine");
+
+    readsSvgContainer[i].on('mousemove', function () {
+      var xPosition = d3.mouse(this)[0];
+      d3.selectAll(".verticalLine")
+        .attr({
+          "x1" : xPosition,
+          "x2" : xPosition
+        })
+    });
+  }
 
 }
 
@@ -419,30 +427,39 @@ function renderVariants() {
 }
 
 function renderReads() {
-  // Making hover box
-  var readDiv = d3.select("#readsArea")
-    .append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
+  var samples = ['person1', 'person2'];
+  var readDiv = [];
 
-  // Create the scale for the axis
-  var readsAxisScale = d3.scale.linear()
-      .domain([viewRegStart, viewRegEnd])
-      .range([0, width]);
+  for (var i = 0; i < samples.length; i++) {
+    // Making hover box
+    readDiv[i] = d3.select("#" + samples[i])
+      .append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
 
-  // Create the axis
-  var readsAxis = d3.svg.axis()
-     .scale(readsAxisScale);
+    // Create the scale for the axis
+    var readsAxisScale = d3.scale.linear()
+        .domain([viewRegStart, viewRegEnd])
+        .range([0, width]);
 
-  // Remove current axis to update it
-  readsSvgContainer.select(".axis").remove();
+    // Create the axis
+    var readsAxis = d3.svg.axis()
+       .scale(readsAxisScale);
 
-  d3.json(readJsonLocation,function(error, data) {
-    console.log(data)
-    samples = ['sample1', 'sample2']
+    // Remove current axis to update it
+    readsSvgContainer[i].select(".axis").remove();
+  }
+
+
+  d3.json(readJsonLocation,function(error, ret) {
     for (var i = 0; i < samples.length; i++) {
+      console.log(ret);
+      var data = ret[samples[i]];
+      console.log(data);
       var readsData = data['tracks'];
       var pairData = data['matePairs'];
+      console.log(readsData);
+      console.log(pairData);
 
       var numTracks = d3.max(readsData, function(d) {return d.track});
       readsHeight = (numTracks+1)*trackHeight;
@@ -458,20 +475,30 @@ function renderReads() {
 
       // Update height of vertical guide line
       $(".verticalLine").attr("y2", readsHeight);
+
       //Add the rectangles
       var rects = readsSvgContainer[i].selectAll(".readrect").data(readsData);
       var modify = rects.transition();
-      modify
+    modify
+      .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
+      .attr("y", (function(d) { return readsHeight - trackHeight * (d.track+1); }))
+      .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
+    
+    var newData = rects.enter();
+    newData
+      .append("g")
+      .append("rect")
+        .attr("class", "readrect")
         .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
         .attr("y", (function(d) { return readsHeight - trackHeight * (d.track+1); }))
         .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
         .attr("height", (trackHeight-2))
         .attr("fill", "steelblue")
         .on("click", function(d) {
-          readDiv.transition()
+          readDiv[i].transition()
             .duration(200)
             .style("opacity", .9);
-          readDiv.html(
+          readDiv[i].html(
             "Read Name: " + d.readName + "<br>" +
             "Start: " + d.start + "<br>" +
             "End: " + d.end + "<br>" +
@@ -482,15 +509,15 @@ function renderReads() {
             .style("top", (d3.event.pageY - 28) + "px");
         })
         .on("mouseover", function(d) {
-          readDiv.transition()
+          readDiv[i].transition()
             .duration(200)
             .style("opacity", .9);
-          readDiv.html(d.readName)
+          readDiv[i].html(d.readName)
             .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY - 28) + "px");
         })
         .on("mouseout", function(d) {
-          readDiv.transition()
+          readDiv[i].transition()
           .duration(500)
           .style("opacity", 0);
         });
@@ -501,10 +528,10 @@ function renderReads() {
       if (indelCheck.checked) {
         renderMismatches(readsData);
       } else {
-        readsSvgContainer.selectAll(".mismatch").remove()
+        readsSvgContainer[i].selectAll(".mismatch").remove()
       }
 
-      var arrowHeads = readsSvgContainer.selectAll("path").data(readsData);
+      var arrowHeads = readsSvgContainer[i].selectAll("path").data(readsData);
       var arrowModify = arrowHeads.transition();
       arrowModify
         .attr("transform", function(d) { 
@@ -562,7 +589,7 @@ function renderReads() {
       numTracks = d3.max(pairData, function(d) {return d.track});
 
       // Add the lines connecting read pairs
-      var mateLines = readsSvgContainer.selectAll(".readPairs").data(pairData);
+      var mateLines = readsSvgContainer[i].selectAll(".readPairs").data(pairData);
       modify = mateLines.transition();
       modify
         .attr("x1", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))

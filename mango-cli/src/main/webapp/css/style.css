@@ -80,3 +80,9 @@ input[type="text"] {
     border: 1.5px solid #996633;
     padding: 3px; 
 }
+
+.sampleReads {
+    overflow-y: scroll;
+    padding-bottom: 10px;
+    height: 50%;
+}
