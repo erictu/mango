@@ -126,18 +126,18 @@ if (variantsExist === true) {
 
 if (readsExist === true) {
 
-  var readsSvgContainer = []
-  var samples = ["person1", "person2"]
+  var readsSvgContainer = {};
+  var samples = [samp1Name, samp2Name];
 
   for (var i = 0; i < samples.length; i++) {
-    $("#readsArea").append("<div id=" + samples[i] + "class='sampleReads'></div>");
+    $("#readsArea").append("<div id=\"" + samples[i] + "\"class=\"sampleReads\"" + "></div>");
     var selector = "#" + samples[i]
-    readsSvgContainer[i] = d3.select(selector)
+    readsSvgContainer[samples[i]] = d3.select(selector)
       .append("svg")
         .attr("height", (readsHeight+base))
         .attr("width", width);
 
-    var readsVertLine = readsSvgContainer[i].append('line')
+    var readsVertLine = readsSvgContainer[samples[i]].append('line')
       .attr({
         'x1': 50,
         'y1': 0,
@@ -147,7 +147,7 @@ if (readsExist === true) {
       .attr("stroke", "#002900")
       .attr("class", "verticalLine");
 
-    readsSvgContainer[i].on('mousemove', function () {
+    readsSvgContainer[samples[i]].on('mousemove', function () {
       var xPosition = d3.mouse(this)[0];
       d3.selectAll(".verticalLine")
         .attr({
@@ -427,7 +427,7 @@ function renderVariants() {
 }
 
 function renderReads() {
-  var samples = ['person1', 'person2'];
+  var samples = [samp1Name, samp2Name];
   var readDiv = [];
 
   for (var i = 0; i < samples.length; i++) {
@@ -447,7 +447,7 @@ function renderReads() {
        .scale(readsAxisScale);
 
     // Remove current axis to update it
-    readsSvgContainer[i].select(".axis").remove();
+    readsSvgContainer[samples[i]].select(".axis").remove();
   }
 
 
@@ -458,17 +458,15 @@ function renderReads() {
       console.log(data);
       var readsData = data['tracks'];
       var pairData = data['matePairs'];
-      console.log(readsData);
-      console.log(pairData);
 
       var numTracks = d3.max(readsData, function(d) {return d.track});
       readsHeight = (numTracks+1)*trackHeight;
 
       // Reset size of svg container
-      readsSvgContainer[i].attr("height", (readsHeight+ base));
+      readsSvgContainer[samples[i]].attr("height", (readsHeight+ base));
 
       // Add the axis to the container
-      readsSvgContainer[i].append("g")
+      readsSvgContainer[samples[i]].append("g")
         .attr("class", "axis")
         .attr("transform", "translate(0, " + readsHeight + ")")
         .call(readsAxis);
@@ -477,7 +475,7 @@ function renderReads() {
       $(".verticalLine").attr("y2", readsHeight);
 
       //Add the rectangles
-      var rects = readsSvgContainer[i].selectAll(".readrect").data(readsData);
+      var rects = readsSvgContainer[samples[i]].selectAll(".readrect").data(readsData);
       var modify = rects.transition();
     modify
       .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
@@ -485,6 +483,7 @@ function renderReads() {
       .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
     
     var newData = rects.enter();
+    console.log(i, readDiv[i]);
     newData
       .append("g")
       .append("rect")
@@ -528,10 +527,10 @@ function renderReads() {
       if (indelCheck.checked) {
         renderMismatches(readsData);
       } else {
-        readsSvgContainer[i].selectAll(".mismatch").remove()
+        readsSvgContainer[samples[i]].selectAll(".mismatch").remove()
       }
 
-      var arrowHeads = readsSvgContainer[i].selectAll("path").data(readsData);
+      var arrowHeads = readsSvgContainer[samples[i]].selectAll("path").data(readsData);
       var arrowModify = arrowHeads.transition();
       arrowModify
         .attr("transform", function(d) { 
@@ -589,7 +588,7 @@ function renderReads() {
       numTracks = d3.max(pairData, function(d) {return d.track});
 
       // Add the lines connecting read pairs
-      var mateLines = readsSvgContainer[i].selectAll(".readPairs").data(pairData);
+      var mateLines = readsSvgContainer[samples[i]].selectAll(".readPairs").data(pairData);
       modify = mateLines.transition();
       modify
         .attr("x1", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
@@ -917,6 +916,7 @@ function zoomIn() {
 function zoomOut() {
   var newStart = Math.max(0, viewRegStart - Math.floor((viewRegEnd-viewRegStart)/2));
   var newEnd = viewRegEnd + Math.floor((viewRegEnd-viewRegStart)/2);
+  console.log(viewRefName, newStart, newEnd);
   render(viewRefName, newStart, newEnd);
 }
 

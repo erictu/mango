@@ -76,13 +76,14 @@ input[type="text"] {
     padding: 3px; 
 }
 #readsArea {
-    border-radius: 5px;
-    border: 1.5px solid #996633;
     padding: 3px; 
 }
 
 .sampleReads {
     overflow-y: scroll;
-    padding-bottom: 10px;
+    margin-bottom: 30px;
     height: 50%;
+    border-radius: 5px;
+    border: 1.5px solid #996633;
+    padding: 3px; 
 }
