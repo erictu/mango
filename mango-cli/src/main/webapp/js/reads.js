@@ -1,11 +1,10 @@
-if (readsExist) {
-  var sampleId = samp1Name + "," + samp2Name
-  var samples = [samp1Name, samp2Name]
-  var readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd + "&sample=" + sampleId;
+if (!readsExist) {
+  console.log("error: on wrong page")
 }
-var referenceStringLocation = "/reference/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-var varJsonLocation = "/variants/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-var featureJsonLocation = "/features/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+var sampleId = samp1Name + "," + samp2Name
+var samples = [samp1Name, samp2Name]
+var readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd + "&sample=" + sampleId;
+
 //Configuration Variables
 var width = window.innerWidth - 18;
 var base = 50;
@@ -74,23 +73,29 @@ refContainer.append("g")
     .attr("class", "axis")
     .call(refAxis);
 
-if (featuresExist === true) {
-  var featureSvgContainer = d3.select("#featArea")
+
+var readsSvgContainer = {};
+var samples = [samp1Name, samp2Name];
+
+for (var i = 0; i < samples.length; i++) {
+  $("#readsArea").append("<div id=\"" + samples[i] + "\"class=\"sampleReads\"" + "></div>");
+  var selector = "#" + samples[i]
+  readsSvgContainer[samples[i]] = d3.select(selector)
     .append("svg")
-      .attr("height", featHeight)
+      .attr("height", (readsHeight+base))
       .attr("width", width);
 
-  var featVertLine = featureSvgContainer.append('line')
+  var readsVertLine = readsSvgContainer[samples[i]].append('line')
     .attr({
-      'x1': 0,
+      'x1': 50,
       'y1': 0,
-      'x2': 0,
-      'y2': featHeight
+      'x2': 50,
+      'y2': readsHeight
     })
     .attr("stroke", "#002900")
     .attr("class", "verticalLine");
-  
-  featureSvgContainer.on('mousemove', function () {
+
+  readsSvgContainer[samples[i]].on('mousemove', function () {
     var xPosition = d3.mouse(this)[0];
     d3.selectAll(".verticalLine")
       .attr({
@@ -98,68 +103,6 @@ if (featuresExist === true) {
         "x2" : xPosition
       })
   });
-
-}
-
-if (variantsExist === true) {
-  var varSvgContainer = d3.select("#varArea")
-    .append("svg")
-      .attr("width", width)
-      .attr("height", varHeight);
-
-  var varVertLine = varSvgContainer.append('line')
-    .attr({
-      'x1': 0,
-      'y1': 0,
-      'x2': 0,
-      'y2': varHeight
-    })
-    .attr("stroke", "#002900")
-    .attr("class", "verticalLine");
-
-  varSvgContainer.on('mousemove', function () {
-      var xPosition = d3.mouse(this)[0];
-      d3.selectAll(".verticalLine")
-        .attr({
-          "x1" : xPosition,
-          "x2" : xPosition
-        })
-  });
-}
-
-if (readsExist === true) {
-
-  var readsSvgContainer = {};
-  var samples = [samp1Name, samp2Name];
-
-  for (var i = 0; i < samples.length; i++) {
-    $("#readsArea").append("<div id=\"" + samples[i] + "\"class=\"sampleReads\"" + "></div>");
-    var selector = "#" + samples[i]
-    readsSvgContainer[samples[i]] = d3.select(selector)
-      .append("svg")
-        .attr("height", (readsHeight+base))
-        .attr("width", width);
-
-    var readsVertLine = readsSvgContainer[samples[i]].append('line')
-      .attr({
-        'x1': 50,
-        'y1': 0,
-        'x2': 50,
-        'y2': readsHeight
-      })
-      .attr("stroke", "#002900")
-      .attr("class", "verticalLine");
-
-    readsSvgContainer[samples[i]].on('mousemove', function () {
-      var xPosition = d3.mouse(this)[0];
-      d3.selectAll(".verticalLine")
-        .attr({
-          "x1" : xPosition,
-          "x2" : xPosition
-        })
-    });
-  }
-
 }
 
 
@@ -179,25 +122,8 @@ function render(refName, start, end) {
 
   readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd + "&sample=" + sampleId;
   referenceStringLocation = "/reference/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-  varJsonLocation = "/variants/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-  featureJsonLocation = "/features/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-
   renderReference();
-
-  // Features
-  if (featuresExist === true) {
-    renderFeatures();
-  } 
-
-  //Variants
-  if (variantsExist === true) {
-    renderVariants();
-  }
-
-  //Reads
-  if (readsExist === true) {
-    renderReads();
-  }
+  renderReads();
 
 }
 
@@ -303,129 +229,6 @@ function renderReference() {
         
       var removed = rects.exit();
       removed.remove();
-  });
-}
-
-function renderFeatures() {
-
-  // Making hover box
-  var featDiv = d3.select("#featArea")
-    .append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-  d3.json(featureJsonLocation, function(error, data) {
-    // Add the rectangles
-    var rects = featureSvgContainer.selectAll("rect").data(data);
-
-    var modify = rects.transition();
-    modify
-      .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
-      .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
-
-    var newData = rects.enter();
-    newData
-      .append("g")
-      .append("rect")
-        .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
-        .attr("y", 0)
-        .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
-        .attr("height", featHeight)
-        .attr("fill", "#6600CC")
-        .on("click", function(d) {
-          featDiv.transition()
-            .duration(200)
-            .style("opacity", .9);
-          featDiv.html(
-            "Feature Id: " + d.featureId + "<br>" +
-            "Feature Type: " + d.featureType + "<br>" +
-            "Start: " + d.start + "<br>" +
-            "End: " + d.end)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseover", function(d) {
-          featDiv.transition()
-          .duration(200)
-          .style("opacity", .9);
-          featDiv.html(d.featureId)
-          .style("left", (d3.event.pageX) + "px")
-          .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseout", function(d) {
-          featDiv.transition()
-          .duration(500)
-          .style("opacity", 0);
-        });
-
-      var removed = rects.exit();
-      removed.remove();
-    });
-}
-
-function renderVariants() {
-
-  // Making hover box
-  var varDiv = d3.select("#varArea")
-    .append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-  d3.json(varJsonLocation, function(error, data) {
-
-    // Add the rectangles
-    var rects = varSvgContainer.selectAll("rect").data(data);
-    
-    var modify = rects.transition();
-    modify
-      .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
-      .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
-
-    var newData = rects.enter();
-    newData
-      .append("g")
-      .append("rect")
-        .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
-        .attr("y", 0)
-        .attr("fill", function(d) {
-          if (d.alleles === "Ref / Alt") {
-            return '#00FFFF'; //CYAN
-          } else if (d.alleles === "Alt / Alt") {
-            return '#FF66FF'; //MAGENTA
-          } else if (d.reference === "Ref / Ref") {
-            return '#99FF33'; //NEON GREEN
-          } else {
-            return '#FFFF66'; //YELLOW
-          }
-        })
-        .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
-        .attr("height", varHeight)
-        .on("click", function(d) {
-          varDiv.transition()
-            .duration(200)
-            .style("opacity", .9);
-          varDiv.html(
-            "Contig: " + d.contigName + "<br>" +
-            "Alleles: " + d.alleles)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseover", function(d) {
-          varDiv.transition()
-            .duration(200)
-            .style("opacity", .9);
-          varDiv.html(d.alleles)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseout", function(d) {
-          varDiv.transition()
-          .duration(500)
-          .style("opacity", 0);
-        });
-
-    var removed = rects.exit();
-    removed.remove();
   });
 }
 

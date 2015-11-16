@@ -142,5 +142,5 @@
   var variantsExist = ${variantsExist};
   var featuresExist = ${featuresExist};
 </script>
-<script src="js/overall.js"></script>
+<script src="js/reads.js"></script>
 </html>

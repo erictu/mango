@@ -292,6 +292,7 @@ class VizServlet extends ScalatraServlet {
           "{ \"tracks\": " + write(VizReads.printTrackJson(filteredLayout)) +
           ", \"matePairs\": " + write(VizReads.printMatePairJson(filteredLayout)) + "},"
       }
+      println(retJson)
       retJson = retJson.dropRight(1)
       retJson = "{" + retJson + "}"
       retJson
