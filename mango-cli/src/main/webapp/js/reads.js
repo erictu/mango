@@ -1,8 +1,9 @@
 if (!readsExist) {
   console.log("error: on wrong page")
 }
-var sampleId = samp1Name + "," + samp2Name
-var samples = [samp1Name, samp2Name]
+
+var sampleId = samp1Name + "," + samp2Name;
+var samples = [samp1Name, samp2Name];
 var readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd + "&sample=" + sampleId;
 
 //Configuration Variables
@@ -18,7 +19,7 @@ var readsHeight = 0; //Default variable: this will change based on number of rea
 
 // Global Data
 var refSequence;
-var readsData;
+var readsData = [];
 // Svg Containers, and vertical guidance lines and animations set here for all divs
 
 // Svg Containers for refArea (exists is all views)
@@ -52,11 +53,14 @@ refContainer.on('mousemove', function () {
 d3.selectAll("input").on("change", checkboxChange);
 
 function checkboxChange() {
-  if (indelCheck.checked) {
-    renderMismatches(readsData)
-  } else {
-    readsSvgContainer.selectAll(".mismatch").remove()
+  for (var i = 0; i < samples.length; i++) {
+    if (indelCheck.checked) {
+      renderMismatches(readsData[i], samples[i]);
+    } else {
+      readsSvgContainer[samples[i]].selectAll(".mismatch").remove();
+    }
   }
+
 }
 
 // Create the scale for the axis
@@ -123,7 +127,10 @@ function render(refName, start, end) {
   readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd + "&sample=" + sampleId;
   referenceStringLocation = "/reference/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
   renderReference();
-  renderReads();
+
+  for (var i = 0; i < samples.length; i++) {
+    renderReads(samples[i], i);
+  }
 
 }
 
@@ -232,39 +239,36 @@ function renderReference() {
   });
 }
 
-function renderReads() {
+function renderReads(sample, i) {
   var readDiv = [];
 
-  for (var i = 0; i < samples.length; i++) {
-    // Making hover box
-    readDiv[i] = d3.select("#" + samples[i])
-      .append("div")
-      .attr("class", "tooltip")
-      .style("opacity", 0);
+  // Making hover box
+  readDiv[i] = d3.select("#" + samples[i])
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
-    // Create the scale for the axis
-    var readsAxisScale = d3.scale.linear()
-        .domain([viewRegStart, viewRegEnd])
-        .range([0, width]);
+  // Create the scale for the axis
+  var readsAxisScale = d3.scale.linear()
+      .domain([viewRegStart, viewRegEnd])
+      .range([0, width]);
 
-    // Create the axis
-    var readsAxis = d3.svg.axis()
-       .scale(readsAxisScale);
+  // Create the axis
+  var readsAxis = d3.svg.axis()
+     .scale(readsAxisScale);
 
-    // Remove current axis to update it
-    readsSvgContainer[samples[i]].select(".axis").remove();
-  }
+  // Remove current axis to update it
+  readsSvgContainer[samples[i]].select(".axis").remove();
+
 
 
   d3.json(readJsonLocation,function(error, ret) {
-    for (var i = 0; i < samples.length; i++) {
       var selector = "#" + samples[i];
       var data = ret[samples[i]];
-      console.log(data);
-      var readsData = data['tracks'];
+      readsData[i] = data['tracks'];
       var pairData = data['matePairs'];
 
-      var numTracks = d3.max(readsData, function(d) {return d.track});
+      var numTracks = d3.max(readsData[i], function(d) {return d.track});
       readsHeight = (numTracks+1)*trackHeight;
 
       // Reset size of svg container
@@ -280,7 +284,7 @@ function renderReads() {
       $(".verticalLine").attr("y2", readsHeight);
 
       //Add the rectangles
-      var rects = readsSvgContainer[samples[i]].selectAll(".readrect").data(readsData);
+      var rects = readsSvgContainer[samples[i]].selectAll(".readrect").data(readsData[i]);
       var modify = rects.transition();
     modify
       .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
@@ -288,7 +292,6 @@ function renderReads() {
       .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
     
     var newData = rects.enter();
-    console.log(i, readDiv[i]);
     newData
       .append("g")
       .append("rect")
@@ -297,45 +300,45 @@ function renderReads() {
         .attr("y", (function(d) { return readsHeight - trackHeight * (d.track+1); }))
         .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
         .attr("height", (trackHeight-2))
-        .attr("fill", "steelblue");
-        // .on("click", function(d) {
-        //   readDiv[i].transition()
-        //     .duration(200)
-        //     .style("opacity", .9);
-        //   readDiv[i].html(
-        //     "Read Name: " + d.readName + "<br>" +
-        //     "Start: " + d.start + "<br>" +
-        //     "End: " + d.end + "<br>" +
-        //     "Cigar:" + d.cigar + "<br>" +
-        //     "Track: " + d.track + "<br>" +
-        //     "Reverse Strand: " + d.readNegativeStrand)
-        //     .style("left", (d3.event.pageX) + "px")
-        //     .style("top", (d3.event.pageY - 28) + "px");
-        // });
-        // .on("mouseover", function(d) {
-        //   readDiv[i].transition()
-        //     .duration(200)
-        //     .style("opacity", .9);
-        //   readDiv[i].html(d.readName)
-        //     .style("left", (d3.event.pageX) + "px")
-        //     .style("top", (d3.event.pageY - 28) + "px");
-        // })
-        // .on("mouseout", function(d) {
-        //   readDiv[i].transition()
-        //   .duration(500)
-        //   .style("opacity", 0);
-        // });
+        .attr("fill", "steelblue")
+        .on("click", function(d) {
+          readDiv[i].transition()
+            .duration(200)
+            .style("opacity", .9);
+          readDiv[i].html(
+            "Read Name: " + d.readName + "<br>" +
+            "Start: " + d.start + "<br>" +
+            "End: " + d.end + "<br>" +
+            "Cigar:" + d.cigar + "<br>" +
+            "Track: " + d.track + "<br>" +
+            "Reverse Strand: " + d.readNegativeStrand)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseover", function(d) {
+          readDiv[i].transition()
+            .duration(200)
+            .style("opacity", .9);
+          readDiv[i].html(d.readName)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+          readDiv[i].transition()
+          .duration(500)
+          .style("opacity", 0);
+        });
       
       var removed = rects.exit();
       removed.remove();
 
       if (indelCheck.checked) {
-        renderMismatches(readsData, samples[i]);
+        renderMismatches(readsData[i], samples[i]);
       } else {
         readsSvgContainer[samples[i]].selectAll(".mismatch").remove()
       }
 
-      var arrowHeads = readsSvgContainer[samples[i]].selectAll("path").data(readsData);
+      var arrowHeads = readsSvgContainer[samples[i]].selectAll("path").data(readsData[i]);
       var arrowModify = arrowHeads.transition();
       arrowModify
         .attr("transform", function(d) { 
@@ -414,7 +417,7 @@ function renderReads() {
       
       var removedGroupPairs = mateLines.exit();
       removedGroupPairs.remove();
-    }
+
   });
 }
 
@@ -477,9 +480,8 @@ function renderMismatches(data, sample) {
 
   //Display M: This is where we compare mismatching pairs
   if (mismatchCheck.checked) {
-    renderMCigar(matchCompare)
+    renderMCigar(matchCompare, sample)
   } else {
-    console.log(readsSvgContainer);
     readsSvgContainer[sample].selectAll(".mrect").remove()
   }
 
@@ -561,9 +563,10 @@ function renderMismatches(data, sample) {
 }
 
 //Render mismatching bases for cigar operator
-function renderMCigar(data) {
+function renderMCigar(data, sample) {
   // Making hover box
-  var misMatchDiv = d3.select("#readsArea")
+  var selector = "#" + sample;
+  var misMatchDiv = d3.select(selector)
     .append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
@@ -596,7 +599,7 @@ function renderMCigar(data) {
   });
   
   //Displays rects from the data we just calculated
-  var mRects = readsSvgContainer.selectAll(".mrect").data(rectArr);
+  var mRects = readsSvgContainer[sample].selectAll(".mrect").data(rectArr);
   var modifiedMRects = mRects.transition()
   modifiedMRects
     .attr("x", function(d) { return d[0]})

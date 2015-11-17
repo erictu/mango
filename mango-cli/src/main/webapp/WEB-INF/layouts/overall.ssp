@@ -143,4 +143,5 @@
   var featuresExist = ${featuresExist};
 </script>
 <script src="js/reads.js"></script>
+<script src="js/overall.js"></script>
 </html>
