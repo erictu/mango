@@ -120,8 +120,8 @@
 
 <br>
 
-<div id="refArea"></div>
-<div id="readsArea"></div>
+<div class="graphArea" id="refArea"></div>
+<div class="graphArea" id="readsArea"></div>
 <br>
 
 <script>

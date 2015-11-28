@@ -10,44 +10,12 @@ var readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&en
 var width = window.innerWidth - 18;
 var base = 50;
 var trackHeight = 6;
-
-// Section Heights
-var refHeight = 38;
-var featHeight = 10;
-var varHeight = 10;
 var readsHeight = 0; //Default variable: this will change based on number of reads
 
 // Global Data
 var refSequence;
 var readsData = [];
 // Svg Containers, and vertical guidance lines and animations set here for all divs
-
-// Svg Containers for refArea (exists is all views)
-var refContainer = d3.select("#refArea")
-  .append("svg")
-    .attr("width", width)
-    .attr("height", refHeight);
-
-// Vertical Guidance Line for refContainer
-var refVertLine = refContainer.append('line')
-  .attr({
-    'x1': 0,
-    'y1': 0,
-    'x2': 0,
-    'y2': refHeight
-  })
-  .attr("stroke", "#002900")
-  .attr("class", "verticalLine");
-
-// Mousemove for ref containers
-refContainer.on('mousemove', function () {
-    var xPosition = d3.mouse(this)[0];
-    d3.selectAll(".verticalLine")
-      .attr({
-        "x1" : xPosition,
-        "x2" : xPosition
-      })
-});
 
 //Manages changes when clicking checkboxes
 d3.selectAll("input").on("change", checkboxChange);
@@ -60,7 +28,6 @@ function checkboxChange() {
       readsSvgContainer[samples[i]].selectAll(".mismatch").remove();
     }
   }
-
 }
 
 // Create the scale for the axis
@@ -71,12 +38,6 @@ var refAxisScale = d3.scale.linear()
 // Create the axis
 var refAxis = d3.svg.axis()
    .scale(refAxisScale);
-
-// Add the axis to the container
-refContainer.append("g")
-    .attr("class", "axis")
-    .call(refAxis);
-
 
 var readsSvgContainer = {};
 var samples = [samp1Name, samp2Name];
@@ -126,117 +87,11 @@ function render(refName, start, end) {
 
   readJsonLocation = "/reads/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd + "&sample=" + sampleId;
   referenceStringLocation = "/reference/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-  renderReference();
 
   for (var i = 0; i < samples.length; i++) {
     renderReads(samples[i], i);
   }
 
-}
-
-function renderReference() {
-  // Making hover box
-  var refDiv = d3.select("#refArea")
-    .append("div")
-    .attr("class", "tooltip")
-    .style("opacity", 0);
-
-  refContainer.select(".axis").remove();
-
-  // Updating Axis
-  // Create the scale for the axis
-  var refAxisScale = d3.scale.linear()
-      .domain([viewRegStart, viewRegEnd])
-      .range([0, width]);
-
-  // Create the axis
-  var refAxis = d3.svg.axis()
-     .scale(refAxisScale);
-
-  // Add the axis to the container
-  refContainer.append("g")
-      .attr("class", "axis")
-      .call(refAxis);
-
-  d3.json(referenceStringLocation, function(error, data) {
-
-    refSequence = data
-    var rects = refContainer.selectAll("rect").data(data);
-
-    var modify = rects.transition();
-    modify
-      .attr("x", function(d, i) {
-        return i/(viewRegEnd-viewRegStart) * width;
-      })
-      .attr("width", function(d) {
-        return Math.max(1, width/(viewRegEnd-viewRegStart));
-      })
-      .attr("fill", function(d) {
-        if (d.reference === "G") {
-          return '#00C000'; //GREEN
-        } else if (d.reference === "C") {
-          return '#E00000'; //CRIMSON
-        } else if (d.reference === "A") {
-          return '#5050FF'; //AZURE
-        } else if (d.reference === "T") {
-          return '#E6E600'; //TWEETY BIRD
-        } else if (d.reference === "N") {
-          return '#FFFFFF'; //WHITE
-        }
-      });
-
-    var newData = rects.enter();
-    newData
-      .append("g")
-      .append("rect")
-        .attr("x", function(d, i) {
-          return i/(viewRegEnd-viewRegStart) * width;
-        })
-        .attr("y", 30)
-        .attr("fill", function(d) {
-          if (d.reference === "G") {
-            return '#00C000'; //GREEN
-          } else if (d.reference === "C") {
-            return '#E00000'; //CRIMSON
-          } else if (d.reference === "A") {
-            return '#5050FF'; //AZURE
-          } else if (d.reference === "T") {
-            return '#E6E600'; //TWEETY BIRD
-          } else if (d.reference === "N") {
-            return '#FFFFFF'; //WHITE
-          }
-        })
-        .attr("width", function(d) {
-          return Math.max(1, width/(viewRegEnd-viewRegStart));
-        })
-        .attr("height", refHeight)
-        .on("click", function(d) {
-          refDiv.transition()
-            .duration(200)
-            .style("opacity", .9);
-          refDiv.html(
-            "Base: " + d.reference + "<br>" +
-            "Position: " + d.position)
-            .style("left", (d3.event.pageX) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .on("mouseover", function(d) {
-          refDiv.transition()
-            .duration(200)
-            .style("opacity", .9);
-          refDiv.html(d.reference)
-            .style("left", (d3.event.pageX - 10) + "px")
-            .style("top", (d3.event.pageY - 30) + "px");
-        })
-        .on("mouseout", function(d) {
-            refDiv.transition()
-            .duration(500)
-            .style("opacity", 0);
-          });
-        
-      var removed = rects.exit();
-      removed.remove();
-  });
 }
 
 function renderReads(sample, i) {
@@ -260,10 +115,9 @@ function renderReads(sample, i) {
   // Remove current axis to update it
   readsSvgContainer[samples[i]].select(".axis").remove();
 
-
-
   d3.json(readJsonLocation,function(error, ret) {
       var selector = "#" + samples[i];
+      console.log(ret);
       var data = ret[samples[i]];
       readsData[i] = data['tracks'];
       var pairData = data['matePairs'];
@@ -290,7 +144,7 @@ function renderReads(sample, i) {
       .attr("x", (function(d) { return (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
       .attr("y", (function(d) { return readsHeight - trackHeight * (d.track+1); }))
       .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
-    
+
     var newData = rects.enter();
     newData
       .append("g")
@@ -328,7 +182,7 @@ function renderReads(sample, i) {
           .duration(500)
           .style("opacity", 0);
         });
-      
+
       var removed = rects.exit();
       removed.remove();
 
@@ -341,18 +195,18 @@ function renderReads(sample, i) {
       var arrowHeads = readsSvgContainer[samples[i]].selectAll("path").data(readsData[i]);
       var arrowModify = arrowHeads.transition();
       arrowModify
-        .attr("transform", function(d) { 
+        .attr("transform", function(d) {
           if (d.readNegativeStrand === true) { // to the right
             var rectStart = (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width;
             var rectWidth = Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart)));
             var xCoord = rectStart + rectWidth;
             var yCoord = readsHeight - trackHeight * (d.track+1) +1;
-            return "translate(" + xCoord + "," + yCoord + ") rotate(-30)"; 
+            return "translate(" + xCoord + "," + yCoord + ") rotate(-30)";
           } else if (d.readNegativeStrand === false) { // to the left
             var rectStart = (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width;
             var xCoord = rectStart;
             var yCoord = readsHeight - trackHeight * (d.track+1) +1;
-            return "translate(" + xCoord + "," + yCoord + ") rotate(30)"; 
+            return "translate(" + xCoord + "," + yCoord + ") rotate(30)";
           }
         })
         .style("fill", function(d) {
@@ -368,18 +222,18 @@ function renderReads(sample, i) {
         .append("g")
         .append("path")
           .attr("d", d3.svg.symbol().type("triangle-up").size(22))
-          .attr("transform", function(d) { 
+          .attr("transform", function(d) {
             if (d.readNegativeStrand === true) { // to the right
               var rectStart = (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width;
               var rectWidth = Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart)));
               var xCoord = rectStart + rectWidth;
               var yCoord = readsHeight - trackHeight * (d.track+1) +1;
-              return "translate(" + xCoord + "," + yCoord + ") rotate(-30)"; 
+              return "translate(" + xCoord + "," + yCoord + ") rotate(-30)";
             } else if (d.readNegativeStrand === false) { // to the left
               var rectStart = (d.start-viewRegStart)/(viewRegEnd-viewRegStart) * width;
               var xCoord = rectStart;
               var yCoord = readsHeight - trackHeight * (d.track+1) +1;
-              return "translate(" + xCoord + "," + yCoord + ") rotate(30)"; 
+              return "translate(" + xCoord + "," + yCoord + ") rotate(30)";
             }
           })
           .style("fill", function(d) {
@@ -389,7 +243,7 @@ function renderReads(sample, i) {
               return "green";
             }
           });
-      
+
       var removedArrows = arrowHeads.exit();
       removedArrows.remove();
 
@@ -414,7 +268,7 @@ function renderReads(sample, i) {
           .attr("y2", (function(d) { return readsHeight - trackHeight * (d.track+1) + trackHeight/2 - 1; }))
           .attr("strock-width", "1")
           .attr("stroke", "steelblue");
-      
+
       var removedGroupPairs = mateLines.exit();
       removedGroupPairs.remove();
 
@@ -437,14 +291,14 @@ function renderMismatches(data, sample) {
     var curr = 0;
     var refCurr = d.start;
     var str = d.cigar.match(/(\d+|[^\d]+)/g);
-    
+
     //Loop through each cigar section
     for (var i = 0; i < 2*str.length; i+=2) {
       var misLen = parseInt(str[i]);
       var op = str[i+1];
       if (op === "I") {
         //[Operation, mismatch start on reference, mismatch start on read sequence, length, base sequence, track]
-        var misElem = [op, refCurr, curr, misLen, d.sequence.substring(curr, curr+misLen), d.track]; 
+        var misElem = [op, refCurr, curr, misLen, d.sequence.substring(curr, curr+misLen), d.track];
         misMatchArr.push(misElem);
       } else if (op === "D") {
         var misElem = [op, refCurr, curr, misLen, d.sequence.substring(curr, curr+misLen), d.track];
@@ -467,7 +321,7 @@ function renderMismatches(data, sample) {
         else { //Regular case where start of read begins after region
           var misElem = [op, refCurr, curr, misLen, d.sequence.substring(curr, curr+misLen), d.track];
           refCurr += misLen;
-          matchCompare.push(misElem);   
+          matchCompare.push(misElem);
         }
       } else if (op === "N") {
         var misElem = [op, refCurr, curr, misLen, d.sequence.substring(curr, curr+misLen), d.track];
@@ -488,10 +342,10 @@ function renderMismatches(data, sample) {
   //Display Indels
   var misRects = readsSvgContainer[sample].selectAll(".mismatch").data(misMatchArr);
   var modMisRects = misRects.transition()
-    .attr("x", (function(d) { 
+    .attr("x", (function(d) {
       return (d[1]-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
     .attr("y", (function(d) { return readsHeight - (trackHeight * (d[5]+1)); }))
-    .attr("width", (function(d) { 
+    .attr("width", (function(d) {
       if (d[0] === "I") {
         return 5;
       } else if (d[0] === "D") {
@@ -499,7 +353,7 @@ function renderMismatches(data, sample) {
       } else if (d[0] === "N") {
         return 5;
       }
-      return Math.max(1,(d[3])*(width/(viewRegEnd-viewRegStart))); 
+      return Math.max(1,(d[3])*(width/(viewRegEnd-viewRegStart)));
     }));
 
   var newMisRects = misRects.enter();
@@ -507,10 +361,10 @@ function renderMismatches(data, sample) {
     .append("g")
     .append("rect")
       .attr("class", "mismatch")
-      .attr("x", (function(d) { 
+      .attr("x", (function(d) {
         return (d[1]-viewRegStart)/(viewRegEnd-viewRegStart) * width; }))
       .attr("y", (function(d) { return readsHeight - (trackHeight * (d[5]+1)); }))
-      .attr("width", (function(d) { 
+      .attr("width", (function(d) {
         if (d[0] === "I") {
           return 5;
         } else if (d[0] === "D") {
@@ -538,7 +392,7 @@ function renderMismatches(data, sample) {
           "Ref Start: " + d[1] + "<br>" +
           "Read Start: " + d[2] + "<br>" +
           "Length:" + d[3] + "<br>" +
-          "Sequence: " + d[4] + "<br>" + 
+          "Sequence: " + d[4] + "<br>" +
           "Track: " + d[5])
           .style("left", (d3.event.pageX) + "px")
           .style("top", (d3.event.pageY - 28) + "px");
@@ -597,7 +451,7 @@ function renderMCigar(data, sample) {
       }
     }
   });
-  
+
   //Displays rects from the data we just calculated
   var mRects = readsSvgContainer[sample].selectAll(".mrect").data(rectArr);
   var modifiedMRects = mRects.transition()
@@ -671,71 +525,4 @@ function renderMCigar(data, sample) {
     var removedMRects = mRects.exit();
     removedMRects.remove()
 
-}
-
-// Try to move very far left
-function moveVeryFarLeft() {
-  var newStart = Math.max(0, viewRegStart - (viewRegEnd-viewRegStart));
-  var newEnd = Math.max(newStart, viewRegEnd - (viewRegEnd-viewRegStart));
-  render(viewRefName, newStart, newEnd);
-}
-
-// Try to move far left
-function moveFarLeft() {
-  var newStart = Math.max(0, viewRegStart - Math.floor((viewRegEnd-viewRegStart)/2));
-  var newEnd = Math.max(newStart, viewRegEnd - Math.floor((viewRegEnd-viewRegStart)/2));
-  render(viewRefName, newStart, newEnd);
-}
-
-// Try to move left
-function moveLeft() {
-  var newStart = Math.max(0, viewRegStart - Math.floor((viewRegEnd-viewRegStart)/4));
-  var newEnd = Math.max(newStart, viewRegEnd - Math.floor((viewRegEnd-viewRegStart)/4));
-  render(viewRefName, newStart, newEnd);
-}
-
- // Try to move right
- function moveRight() {
-   var newStart = viewRegStart + Math.floor((viewRegEnd-viewRegStart)/4);
-   var newEnd = viewRegEnd + Math.floor((viewRegEnd-viewRegStart)/4);
-   render(viewRefName, newStart, newEnd);
-}
-
-// Try to move far right
-function moveFarRight() {
-  var newStart = viewRegStart + Math.floor((viewRegEnd-viewRegStart)/2);
-  var newEnd = viewRegEnd + Math.floor((viewRegEnd-viewRegStart)/2);
-  render(viewRefName, newStart, newEnd);
-}
-
-// Try to move very far right
-function moveVeryFarRight() {
-  var newStart = viewRegStart + (viewRegEnd-viewRegStart);
-  var newEnd = viewRegEnd + (viewRegEnd-viewRegStart);
-  render(viewRefName, newStart, newEnd);
-}
-
-// Try to zoom in
-function zoomIn() {
-  var newStart = viewRegStart + Math.floor((viewRegEnd-viewRegStart)/4);
-  var newEnd = viewRegEnd - Math.floor((viewRegEnd-viewRegStart)/4);
-  render(viewRefName, newStart, newEnd);
-}
-
-// Try to zoom out
-function zoomOut() {
-  var newStart = Math.max(0, viewRegStart - Math.floor((viewRegEnd-viewRegStart)/2));
-  var newEnd = viewRegEnd + Math.floor((viewRegEnd-viewRegStart)/2);
-  render(viewRefName, newStart, newEnd);
-}
-
-// Redirect based on form input
-function checkForm(form) {
-  var info = form.info.value;
-  sampleId = info.split(":")[0]
-  var refName = info.split(":")[1];
-  var region = info.split(":")[2].split("-");
-  var newStart = Math.max(0, region[0]);
-  var newEnd = Math.max(newStart, region[1]);
-  render(refName, newStart, newEnd);
 }
