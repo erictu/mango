@@ -30,6 +30,17 @@ function checkboxChange() {
   }
 }
 
+// Redirect based on form input
+function checkForm(form) {
+  var info = form.info.value;
+  sampleId = info.split(":")[0]
+  var refName = info.split(":")[1];
+  var region = info.split(":")[2].split("-");
+  var newStart = Math.max(0, region[0]);
+  var newEnd = Math.max(newStart, region[1]);
+  render(refName, newStart, newEnd);
+}
+
 // Create the scale for the axis
 var refAxisScale = d3.scale.linear()
     .domain([viewRegStart, viewRegEnd])
@@ -40,7 +51,6 @@ var refAxis = d3.svg.axis()
    .scale(refAxisScale);
 
 var readsSvgContainer = {};
-var samples = [samp1Name, samp2Name];
 
 for (var i = 0; i < samples.length; i++) {
   $("#readsArea").append("<div id=\"" + samples[i] + "\"class=\"sampleReads\"" + "></div>");

@@ -285,7 +285,8 @@ class VizServlet extends ScalatraServlet {
     val templateEngine = new TemplateEngine
     if (VizReads.readsExist) {
       templateEngine.layout("mango-cli/src/main/webapp/WEB-INF/layouts/reads.ssp",
-        Map("viewRegion" -> (viewRegion.referenceName, viewRegion.start.toString, viewRegion.end.toString)))
+        Map("viewRegion" -> (viewRegion.referenceName, viewRegion.start.toString, viewRegion.end.toString),
+          "samples" -> (VizReads.samp1Name, VizReads.samp2Name)))
     } else {
       templateEngine.layout("mango-cli/src/main/webapp/WEB-INF/layouts/noreads.ssp")
     }
