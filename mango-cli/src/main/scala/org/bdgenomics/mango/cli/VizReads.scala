@@ -34,7 +34,7 @@ import org.bdgenomics.adam.models.ReferencePosition
 import org.bdgenomics.adam.projections.{ Projection, VariantField, AlignmentRecordField, GenotypeField, NucleotideContigFragmentField, FeatureField }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.mango.models._
-import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature, Genotype, GenotypeAllele, NucleotideContigFragment }
+import org.bdgenomics.formats.avro.{ AlignmentRecord, Feature, Genotype, GenotypeAllele, NucleotideContigFragment, Fragment }
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.fusesource.scalate.TemplateEngine
 import org.json4s._
@@ -307,6 +307,7 @@ class VizServlet extends ScalatraServlet {
       }
       retJson = retJson.dropRight(1)
       retJson = "{" + retJson + "}"
+      println(retJson)
       retJson
     }
   }
@@ -376,24 +377,25 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
 
-      val input: Map[String, List[Genotype]] = VizReads.variantData.get(viewRegion, "callset1")
-      println(input)
-      // val variantsRDD: RDD[Genotype] = VizReads.sc.loadGenotypes(VizReads.variantsPath).filterByOverlappingRegion(viewRegion)
-      // val trackinput: RDD[(ReferenceRegion, Genotype)] = variantsRDD.keyBy(v => ReferenceRegion(ReferencePosition(v)))
-      //
-      // if (showVariants) {
-      //   val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
-      //   write(VizReads.printVariationJson(filteredGenotypeTrack))
-      //
-      // } else if (showVariantFreq) {
-      //   val variantFreq = trackinput.countByKey
-      //   var tracks = new ListBuffer[VariationFreqJson]
-      //   for (rec <- variantFreq) {
-      //     tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
-      //   }
-      //   tracks.toList
-      //   write(tracks)
-      // }
+      val input: List[Genotype] = VizReads.variantData.get(viewRegion, "callset1")
+      val trackinput: RDD[(ReferenceRegion, Genotype)] = VizReads.sc.parallelize(input).keyBy(v => ReferenceRegion(ReferencePosition(v)))
+
+      //val variantsRDD: RDD[Genotype] = VizReads.sc.loadGenotypes(VizReads.variantsPath).filterByOverlappingRegion(viewRegion)
+      //val trackinput: RDD[(ReferenceRegion, Genotype)] = variantsRDD.keyBy(v => ReferenceRegion(ReferencePosition(v)))
+
+      if (showVariants) {
+        val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
+        write(VizReads.printVariationJson(filteredGenotypeTrack))
+
+      } else if (showVariantFreq) {
+        val variantFreq = trackinput.countByKey
+        var tracks = new ListBuffer[VariationFreqJson]
+        for (rec <- variantFreq) {
+          tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
+        }
+        println(tracks.toList)
+        write(tracks.toList)
+      }
       // if (VizReads.variantsPath.endsWith(".adam")) {
       //   val pred: FilterPredicate = ((LongColumn("variant.end") >= viewRegion.start) && (LongColumn("variant.start") <= viewRegion.end))
       //   val proj = Projection(GenotypeField.variant, GenotypeField.alleles)
@@ -464,8 +466,8 @@ class VizServlet extends ScalatraServlet {
       viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
       if (VizReads.referencePath.endsWith(".adam")) {
         val pred: FilterPredicate = ((LongColumn("fragmentStartPosition") >= viewRegion.start) && (LongColumn("fragmentStartPosition") <= viewRegion.end))
-        val referenceRDD: RDD[NucleotideContigFragment] = VizReads.sc.loadParquetFragments(VizReads.referencePath, predicate = Some(pred))
-        write(VizReads.printReferenceJson(referenceRDD, viewRegion))
+        val referenceRDD: RDD[Fragment] = VizReads.sc.loadParquetFragments(VizReads.referencePath, predicate = Some(pred))
+        // TODO: write(VizReads.printReferenceJson(referenceRDD, viewRegion))
       } else if (VizReads.referencePath.endsWith(".fa") || VizReads.referencePath.endsWith(".fasta") || VizReads.referencePath.endsWith(".adam")) {
         val idx = new File(VizReads.referencePath + ".fai")
         if (idx.exists() && !idx.isDirectory()) {
@@ -478,8 +480,9 @@ class VizServlet extends ScalatraServlet {
             }
           }
         } else {
-          val referenceRDD: RDD[NucleotideContigFragment] = VizReads.sc.loadSequence(VizReads.referencePath)
-          write(VizReads.printReferenceJson(referenceRDD, viewRegion))
+          // TODO: not supported
+          // val referenceRDD: RDD[NucleotideContigFragment] = VizReads.sc.loadSequence(VizReads.referencePath)
+          // write(VizReads.printReferenceJson(referenceRDD, viewRegion))
         }
       }
     }
