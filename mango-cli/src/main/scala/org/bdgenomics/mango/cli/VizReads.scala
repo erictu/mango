@@ -152,11 +152,8 @@ object VizReads extends BDGCommandCompanion with Logging {
 
   //Prepares variant frequency information in Json format
   def printVariationJson(layout: OrderedTrackedLayout[Genotype]): List[VariationJson] = VizTimers.PrintVariationJsonTimer.time {
-    println("layout ", layout)
     var tracks = new ListBuffer[VariationJson]
-    log.info("Number of trackAssignments in printVariationJson is: " + layout.trackAssignments.size)
     for (rec <- layout.trackAssignments) {
-      println("rec", rec)
       val vRec = rec._1._2.asInstanceOf[Genotype]
       tracks += new VariationJson(vRec.getVariant.getContig.getContigName, vRec.getAlleles.mkString(" / "), vRec.getVariant.getStart, vRec.getVariant.getEnd, rec._2)
     }
@@ -234,6 +231,7 @@ object VizReads extends BDGCommandCompanion with Logging {
 case class TrackJson(readName: String, start: Long, end: Long, readNegativeStrand: Boolean, sequence: String, cigar: String, track: Long)
 case class MatePairJson(start: Long, end: Long, track: Long)
 case class VariationJson(contigName: String, alleles: String, start: Long, end: Long, track: Long)
+case class SampleVariationJson(sampleId: String, variationJson: VariationJson)
 case class VariationFreqJson(contigName: String, start: Long, end: Long, count: Long)
 case class FreqJson(base: Long, freq: Long)
 case class FeatureJson(featureId: String, featureType: String, start: Long, end: Long, track: Long)
@@ -308,7 +306,6 @@ class VizServlet extends ScalatraServlet {
       }
       retJson = retJson.dropRight(1)
       retJson = "{" + retJson + "}"
-      println(retJson)
       retJson
     }
   }
@@ -372,64 +369,27 @@ class VizServlet extends ScalatraServlet {
   }
 
   get("/variants/:ref") {
-    // val showVariants = false
-    // val showVariantFreq = true
-    // VizTimers.VarRequest.time {
-    //   contentType = "json"
-    //   viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
-    //
-    //   val input: List[Genotype] = VizReads.variantData.get(viewRegion, "callset1")
-    //   val trackinput: RDD[(ReferenceRegion, Genotype)] = VizReads.sc.parallelize(input).keyBy(v => ReferenceRegion(ReferencePosition(v)))
-    //
-    //   //val variantsRDD: RDD[Genotype] = VizReads.sc.loadGenotypes(VizReads.variantsPath).filterByOverlappingRegion(viewRegion)
-    //   //val trackinput: RDD[(ReferenceRegion, Genotype)] = variantsRDD.keyBy(v => ReferenceRegion(ReferencePosition(v)))
-    //
-    //   if (showVariants) {
-    //     val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
-    //     write(VizReads.printVariationJson(filteredGenotypeTrack))
-    //
-    //   } else if (showVariantFreq) {
-    //     val variantFreq = trackinput.countByKey
-    //     var tracks = new ListBuffer[VariationFreqJson]
-    //     for (rec <- variantFreq) {
-    //       tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
-    //     }
-    //     println(tracks.toList)
-    //     write(tracks.toList)
-    //  }
-    // if (VizReads.variantsPath.endsWith(".adam")) {
-    //   val pred: FilterPredicate = ((LongColumn("variant.end") >= viewRegion.start) && (LongColumn("variant.start") <= viewRegion.end))
-    //   val proj = Projection(GenotypeField.variant, GenotypeField.alleles)
-    //   val variantsRDD: RDD[Genotype] = VizTimers.LoadParquetFile.time {
-    //     VizReads.sc.loadParquetGenotypes(VizReads.variantsPath, predicate = Some(pred), projection = Some(proj))
-    //   }
-    //   val trackinput: RDD[(ReferenceRegion, Genotype)] = variantsRDD.keyBy(v => ReferenceRegion(ReferencePosition(v)))
-    //   val collected = VizTimers.DoingCollect.time {
-    //     trackinput.collect()
-    //   }
-    //   val filteredGenotypeTrack = VizTimers.MakingTrack.time {
-    //     new OrderedTrackedLayout(collected)
-    //   }
-    //   write(VizReads.printVariationJson(filteredGenotypeTrack))
-    // } else if (VizReads.variantsPath.endsWith(".vcf")) {
-    //   val variantsRDD: RDD[Genotype] = VizReads.sc.loadGenotypes(VizReads.variantsPath).filterByOverlappingRegion(viewRegion)
-    //   val trackinput: RDD[(ReferenceRegion, Genotype)] = variantsRDD.keyBy(v => ReferenceRegion(ReferencePosition(v)))
-    //
-    //   if (showVariants) {
-    //     val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
-    //     write(VizReads.printVariationJson(filteredGenotypeTrack))
-    //
-    //   } else if (showVariantFreq) {
-    //     val variantFreq = trackinput.countByKey
-    //     var tracks = new ListBuffer[VariationFreqJson]
-    //     for (rec <- variantFreq) {
-    //       tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
-    //     }
-    //     tracks.toList
-    //     write(tracks)
-    //   }
-    // }
-    //  }
+    VizTimers.VarRequest.time {
+      contentType = "json"
+      viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
+
+      val input: List[Genotype] = VizReads.variantData.get(viewRegion, "callset1")
+      val trackinput: RDD[(ReferenceRegion, Genotype)] = VizReads.sc.parallelize(input).keyBy(v => ReferenceRegion(ReferencePosition(v)))
+
+      val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
+
+      val variantFreq = trackinput.countByKey
+      var tracks = new ListBuffer[VariationFreqJson]
+      for (rec <- variantFreq) {
+        tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
+      }
+
+      val retJson =
+        "\"variants\": " + write(VizReads.printVariationJson(filteredGenotypeTrack)) +
+          ", \"frequencies\": " + write(tracks.toList)
+      val ret = "{" + retJson + "}"
+      ret
+    }
   }
 
   get("/features") {
