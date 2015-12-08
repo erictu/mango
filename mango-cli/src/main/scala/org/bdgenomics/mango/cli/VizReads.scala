@@ -79,6 +79,7 @@ object VizReads extends BDGCommandCompanion with Logging {
 
   var readsRDD: RDD[(ReferenceRegion, AlignmentRecord)] = null
   var testRDD: RDD[(String, AlignmentRecord)] = null
+  var testRDD2: RDD[Genotype] = null
 
   val commandName: String = "viz"
   val commandDescription: String = "Genomic visualization for ADAM"
@@ -295,7 +296,6 @@ class VizServlet extends ScalatraServlet {
       viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
       val sampleIds: List[String] = params("sample").split(",").toList
       val input: Map[String, List[AlignmentRecord]] = VizReads.readsData.multiget(viewRegion, sampleIds)
-
       VizReads.testRDD.map(r => r._2).filterByOverlappingRegion(viewRegion).collect()
       val withRefReg: List[(String, List[(ReferenceRegion, AlignmentRecord)])] = input.toList.map(elem => (elem._1, elem._2.map(t => (ReferenceRegion(t), t))))
       var retJson = ""
@@ -371,25 +371,26 @@ class VizServlet extends ScalatraServlet {
 
   get("/variants/:ref") {
     VizTimers.VarRequest.time {
-      // contentType = "json"
-      // viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
-      //
-      // val input: List[Genotype] = VizReads.variantData.get(viewRegion, "callset1")
-      // val trackinput: RDD[(ReferenceRegion, Genotype)] = VizReads.sc.parallelize(input).keyBy(v => ReferenceRegion(ReferencePosition(v)))
-      //
-      // val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
-      //
-      // val variantFreq = trackinput.countByKey
-      // var tracks = new ListBuffer[VariationFreqJson]
-      // for (rec <- variantFreq) {
-      //   tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
-      // }
-      //
-      // val retJson =
-      //   "\"variants\": " + write(VizReads.printVariationJson(filteredGenotypeTrack)) +
-      //     ", \"frequencies\": " + write(tracks.toList)
-      // val ret = "{" + retJson + "}"
-      // ret
+      contentType = "json"
+      viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
+
+      val input: List[Genotype] = VizReads.variantData.get(viewRegion, "callset1")
+      val trackinput: RDD[(ReferenceRegion, Genotype)] = VizReads.sc.parallelize(input).keyBy(v => ReferenceRegion(ReferencePosition(v)))
+      VizReads.testRDD2.filterByOverlappingRegion(viewRegion).collect()
+
+      val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
+
+      val variantFreq = trackinput.countByKey
+      var tracks = new ListBuffer[VariationFreqJson]
+      for (rec <- variantFreq) {
+        tracks += VariationFreqJson(rec._1.referenceName, rec._1.start, rec._1.end, rec._2)
+      }
+
+      val retJson =
+        "\"variants\": " + write(VizReads.printVariationJson(filteredGenotypeTrack)) +
+          ", \"frequencies\": " + write(tracks.toList)
+      val ret = "{" + retJson + "}"
+      ret
     }
   }
 
@@ -458,7 +459,7 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
   override def run(sc: SparkContext): Unit = {
     VizReads.sc = sc
     VizReads.readsData = LazyMaterialization(sc)
-    //VizReads.variantData = LazyMaterialization(sc)
+    VizReads.variantData = LazyMaterialization(sc)
 
     if (args.referencePath.endsWith(".fa") || args.referencePath.endsWith(".fasta") || args.referencePath.endsWith(".adam")) {
       VizReads.referencePath = args.referencePath
@@ -480,6 +481,7 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
           val temp1 = VizReads.sc.loadAlignments(args.readsPath1).map(r => ("sample1", r))
           val temp2 = VizReads.sc.loadAlignments(args.readsPath1).map(r => ("sample2", r))
           VizReads.testRDD = temp1.union(temp2)
+          VizReads.testRDD.cache()
         } else {
           log.info("WARNING: Invalid input for reads file")
           println("WARNING: Invalid input for reads file")
@@ -516,8 +518,10 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
         if (args.variantsPath.endsWith(".vcf") || args.variantsPath.endsWith(".adam")) {
           VizReads.variantsPath = args.variantsPath
           // TODO: remove hardcode for callset1
-          //VizReads.variantData.loadSample("callset1", VizReads.variantsPath)
+          VizReads.variantData.loadSample("callset1", VizReads.variantsPath)
           VizReads.variantsExist = true
+          VizReads.testRDD2 = VizReads.sc.loadParquetGenotypes(args.variantsPath)
+          VizReads.testRDD2.cache()
         } else {
           log.info("WARNING: Invalid input for variants file")
           println("WARNING: Invalid input for variants file")
