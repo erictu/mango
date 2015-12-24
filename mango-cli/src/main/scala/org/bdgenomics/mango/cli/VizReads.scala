@@ -295,9 +295,9 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
       val sampleIds: List[String] = params("sample").split(",").toList
-      val input: Map[String, List[AlignmentRecord]] = VizReads.readsData.multiget(viewRegion, sampleIds)
-      VizReads.testRDD.map(r => r._2).filterByOverlappingRegion(viewRegion).collect()
-      val withRefReg: List[(String, List[(ReferenceRegion, AlignmentRecord)])] = input.toList.map(elem => (elem._1, elem._2.map(t => (ReferenceRegion(t), t))))
+      val input: Map[String, Array[AlignmentRecord]] = VizReads.readsData.multiget(viewRegion, sampleIds)
+
+      val withRefReg: List[(String, Array[(ReferenceRegion, AlignmentRecord)])] = input.toList.map(elem => (elem._1, elem._2.map(t => (ReferenceRegion(t), t))))
       var retJson = ""
       for (elem <- withRefReg) {
         val filteredLayout = new OrderedTrackedLayout(elem._2)
@@ -333,30 +333,30 @@ class VizServlet extends ScalatraServlet {
     }
   }
 
-  // get("/freq/:ref") {
-  //   VizTimers.FreqRequest.time {
-  //     contentType = "json"
-  //     viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
-  //     if (VizReads.readsPath.endsWith(".adam")) {
-  //       val pred: FilterPredicate = ((LongColumn("end") >= viewRegion.start) && (LongColumn("start") <= viewRegion.end))
-  //       val proj = Projection(AlignmentRecordField.readName, AlignmentRecordField.start, AlignmentRecordField.end)
-  //       val readsRDD: RDD[AlignmentRecord] = VizReads.sc.loadParquetAlignments(VizReads.readsPath, predicate = Some(pred), projection = Some(proj))
-  //       val filteredArray = readsRDD.collect()
-  //       write(VizReads.printJsonFreq(filteredArray, viewRegion))
-  //     } else if (VizReads.readsPath.endsWith(".sam") || VizReads.readsPath.endsWith(".bam")) {
-  //       val idxFile: File = new File(VizReads.readsPath + ".bai")
-  //       if (!idxFile.exists()) {
-  //         val readsRDD: RDD[AlignmentRecord] = VizReads.sc.loadBam(VizReads.readsPath).filterByOverlappingRegion(viewRegion)
-  //         val filteredArray = readsRDD.collect()
-  //         write(VizReads.printJsonFreq(filteredArray, viewRegion))
-  //       } else {
-  //         val readsRDD: RDD[AlignmentRecord] = VizReads.sc.loadIndexedBam(VizReads.readsPath, viewRegion)
-  //         val filteredArray = readsRDD.collect()
-  //         write(VizReads.printJsonFreq(filteredArray, viewRegion))
-  //       }
-  //     }
-  //   }
-  // }
+  get("/freq/:ref") {
+    VizTimers.FreqRequest.time {
+      contentType = "json"
+      viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
+      if (VizReads.readsPath1.endsWith(".adam")) {
+        val pred: FilterPredicate = ((LongColumn("end") >= viewRegion.start) && (LongColumn("start") <= viewRegion.end))
+        val proj = Projection(AlignmentRecordField.readName, AlignmentRecordField.start, AlignmentRecordField.end)
+        val readsRDD: RDD[AlignmentRecord] = VizReads.sc.loadParquetAlignments(VizReads.readsPath1, predicate = Some(pred), projection = Some(proj))
+        val filteredArray = readsRDD.collect()
+        write(VizReads.printJsonFreq(filteredArray, viewRegion))
+      } else if (VizReads.readsPath1.endsWith(".sam") || VizReads.readsPath1.endsWith(".bam")) {
+        val idxFile: File = new File(VizReads.readsPath1 + ".bai")
+        if (!idxFile.exists()) {
+          val readsRDD: RDD[AlignmentRecord] = VizReads.sc.loadBam(VizReads.readsPath1).filterByOverlappingRegion(viewRegion)
+          val filteredArray = readsRDD.collect()
+          write(VizReads.printJsonFreq(filteredArray, viewRegion))
+        } else {
+          val readsRDD: RDD[AlignmentRecord] = VizReads.sc.loadIndexedBam(VizReads.readsPath1, viewRegion)
+          val filteredArray = readsRDD.collect()
+          write(VizReads.printJsonFreq(filteredArray, viewRegion))
+        }
+      }
+    }
+  }
 
   get("/variants") {
     contentType = "text/html"
@@ -376,7 +376,6 @@ class VizServlet extends ScalatraServlet {
 
       val input: List[Genotype] = VizReads.variantData.get(viewRegion, "callset1")
       val trackinput: RDD[(ReferenceRegion, Genotype)] = VizReads.sc.parallelize(input).keyBy(v => ReferenceRegion(ReferencePosition(v)))
-      VizReads.testRDD2.filterByOverlappingRegion(viewRegion).collect()
 
       val filteredGenotypeTrack = new OrderedTrackedLayout(trackinput.collect())
 
@@ -478,10 +477,6 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
           VizReads.samp1Name = args.samp1Name
           VizReads.readsExist = true
           VizReads.readsData.loadSample(args.samp1Name, args.readsPath1)
-          val temp1 = VizReads.sc.loadAlignments(args.readsPath1).map(r => ("sample1", r))
-          val temp2 = VizReads.sc.loadAlignments(args.readsPath1).map(r => ("sample2", r))
-          VizReads.testRDD = temp1.union(temp2)
-          VizReads.testRDD.cache()
         } else {
           log.info("WARNING: Invalid input for reads file")
           println("WARNING: Invalid input for reads file")
@@ -555,7 +550,6 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
     VizReads.server.setHandler(handlers)
     handlers.addHandler(new org.eclipse.jetty.webapp.WebAppContext("mango-cli/src/main/webapp", "/"))
     VizReads.server.start()
-    println("setting lazy mat")
     println("View the visualization at: " + args.port)
     println("Frequency visualization at: /freq")
     println("Overlapping reads visualization at: /reads")
