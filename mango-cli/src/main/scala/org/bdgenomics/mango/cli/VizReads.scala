@@ -278,6 +278,19 @@ class VizServlet extends ScalatraServlet {
     VizReads.quit()
   }
 
+  get("/loadFile") {
+    val testStr = "testString"
+    // println(params)
+    println(testStr)
+    testStr
+  }
+
+  get("/loadFile/:ref") {
+    val testStr = "testString"
+    println(params)
+    testStr
+  }
+
   get("/reads") {
     contentType = "text/html"
     val templateEngine = new TemplateEngine

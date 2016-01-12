@@ -244,6 +244,8 @@ $("#loadFile:file").change(function(){
 
   if (ext == "bam" || ext == "vcf" || ext == "adam") {
     samples.push(filename);
+    var req = "/loadFile/" + filename;
+    httpGet(req);
   }
 
 });
@@ -252,6 +254,14 @@ $("#loadFile:file").change(function(){
 $("#loadRef:file").change(function(){
   var filename = $("#loadRef:file").val();
 });
+
+
+function httpGet(theUrl) {
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
+  // xmlHttp.send( null );
+  return xmlHttp.responseText;
+}
 
 // Redirect based on form input
 function checkForm(form) {
