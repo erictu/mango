@@ -229,8 +229,6 @@ class VizServlet extends ScalatraServlet {
         retJson += "\"" + sample + "\":" +
           "{ \"filename\": " + write(fileMap(sample)) +
           ", \"tracks\": " + write(sampleData.records) +
-          ", \"indels\": " + write(sampleData.mismatches.filter(_.op != "M")) +
-          ", \"mismatches\": " + write(sampleData.mismatches.filter(_.op == "M")) +
           ", \"matePairs\": " + write(sampleData.matePairs) + "},"
       }
       retJson = retJson.dropRight(1)

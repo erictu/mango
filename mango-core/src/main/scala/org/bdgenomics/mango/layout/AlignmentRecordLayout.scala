@@ -47,21 +47,15 @@ object AlignmentRecordLayout extends Logging {
     val readTracks = new ListBuffer[ReadTrack]()
     val highRes = region.end - region.start < 10000
 
-    val tracks = {
-      if (highRes) {
-        rdd.mapPartitions(AlignmentRecordLayout(_, reference, region)).collect.groupBy(_.sample)
-      } else {
-        rdd.mapPartitions(AlignmentRecordLayout(_, reference, region)).filter(_.misMatches.isEmpty).collect.groupBy(_.sample)
-      }
-    }
+    val tracks = rdd.mapPartitions(AlignmentRecordLayout(_, reference, region)).collect.groupBy(_.sample)
+
 
     tracks.foreach {
       case (sample, track) => {
         val indexedTrack = track.zipWithIndex
         val matePairs = indexedTrack.flatMap(r => MatePairJson(r._1.matePairs, r._2))
-        val mismatches = indexedTrack.flatMap(r => MisMatchJson(r._1.misMatches, r._2))
         val reads = indexedTrack.flatMap(r => ReadJson(r._1.records, r._2))
-        readTracks += new ReadTrack(sample, reads.toList, matePairs.toList, mismatches.toList)
+        readTracks += new ReadTrack(sample, reads.toList, matePairs.toList)
       }
     }
     readTracks.toList
@@ -147,7 +141,7 @@ case class ReadJson(readName: String, start: Long, end: Long, readNegativeStrand
 case class MatePairJson(val start: Long, val end: Long, track: Long)
 
 // complete json object of reads data containing matepairs and mismatches
-case class ReadTrack(val sample: String, val records: List[ReadJson], val matePairs: List[MatePairJson], val mismatches: List[MisMatchJson])
+case class ReadTrack(val sample: String, val records: List[ReadJson], val matePairs: List[MatePairJson])
 
 // untracked json classes
 case class MatePair(start: Long, end: Long)
