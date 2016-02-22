@@ -49,7 +49,6 @@ object AlignmentRecordLayout extends Logging {
 
     val tracks = rdd.mapPartitions(AlignmentRecordLayout(_, reference, region)).collect.groupBy(_.sample)
 
-
     tracks.foreach {
       case (sample, track) => {
         val indexedTrack = track.zipWithIndex
