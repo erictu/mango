@@ -219,7 +219,8 @@ class VizServlet extends ScalatraServlet {
 
       val data: RDD[(ReferenceRegion, AlignmentRecord)] =
         VizReads.readsData.multiget(viewRegion, sampleIds).toRDD
-
+      data.collect
+      println("SUCCESS")
       val alignmentData = AlignmentRecordLayout(data, reference, region, sampleIds)
       val fileMap = VizReads.readsData.getFileMap()
       var retJson = ""
