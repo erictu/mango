@@ -111,9 +111,9 @@ object VizReads extends BDGCommandCompanion with Logging {
     // TODO: write in terms of reference functions from samtools in contig
     val end: Long = Math.min(region.end, VizReads.readsData.dict(region.referenceName).get.length)
     if (VizReads.referencePath.endsWith(".adam")) {
-      // val pred: FilterPredicate = ((LongColumn("fragmentStartPosition") >= region.start) && (LongColumn("fragmentStartPosition") <= region.end))
-      // val referenceRDD: RDD[Fragment] = VizReads.sc.loadParquetFragments(VizReads.referencePath, predicate = Some(pred))
-      // referenceRDD.adamGetReferenceString(region)
+      val pred: FilterPredicate = ((LongColumn("fragmentStartPosition") >= region.start) && (LongColumn("fragmentStartPosition") <= region.end))
+      val referenceRDD: RDD[NucleotideContigFragment] = VizReads.sc.loadParquetContigFragments(VizReads.referencePath, predicate = Some(pred))
+      return referenceRDD.adamGetReferenceString(region)
     } else if (VizReads.referencePath.endsWith(".fa") || VizReads.referencePath.endsWith(".fasta") || VizReads.referencePath.endsWith(".adam")) {
       val idx = new File(VizReads.referencePath + ".fai")
       if (idx.exists() && !idx.isDirectory()) {
@@ -131,7 +131,7 @@ object VizReads extends BDGCommandCompanion with Logging {
         }
       } else {
         val referenceRDD: RDD[NucleotideContigFragment] = VizReads.sc.loadSequence(VizReads.referencePath)
-        referenceRDD.adamGetReferenceString(region)
+        return referenceRDD.adamGetReferenceString(region)
       }
     }
     log.warn("reference file type ", VizReads.referencePath, " not supported")
