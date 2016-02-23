@@ -130,9 +130,11 @@ object VizReads extends BDGCommandCompanion with Logging {
           }
         }
       } else {
-        log.warn("reference file type ", VizReads.referencePath, " not supported")
+        val referenceRDD: RDD[NucleotideContigFragment] = VizReads.sc.loadSequence(VizReads.referencePath)
+        referenceRDD.adamGetReferenceString(region)
       }
     }
+    log.warn("reference file type ", VizReads.referencePath, " not supported")
     null
   }
 
@@ -216,7 +218,8 @@ class VizServlet extends ScalatraServlet {
       val region = new ReferenceRegion(params("ref").toString, params("start").toLong, end)
       val sampleIds: List[String] = params("sample").split(",").toList
       val reference = VizReads.getReference(region)
-
+      println(reference)
+      println("___________________________")
       val data: RDD[(ReferenceRegion, AlignmentRecord)] =
         VizReads.readsData.multiget(viewRegion, sampleIds).toRDD
       data.collect
