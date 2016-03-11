@@ -1,3 +1,66 @@
+.heatmap {
+  background-color: #F6F6F6;
+  height: auto;
+  margin-top: 30px;
+  margin: 0 auto;
+  border-radius: 3px;
+  overflow: hidden;
+  width: 83.3%;
+  padding: 0 10px; }
 
+rect.bordered {
+  stroke: #E6E6E6;
+  stroke-width: 2px; }
+
+text.mono {
+  font-size: 9pt;
+  font-family: Consolas, courier;
+  fill: #000; }
+
+text.axis-workweek {
+  fill: #000; }
+
+text.axis-worktime {
+  fill: #000; }
+
+.d3-tip {
+  /*line-height: 1;*/
+  width: 80px;
+  font-weight: bold;
+  padding: 10px;
+  background: black;
+  color: #fff;
+  border-radius: 2px; }
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  /* background-color: red;
+   content: ".";
+   height:50px;
+   width:50px;
+   display: inline;
+   color: rgba(0, 0, 0, 0.8);
+   text-align: center;*/ }
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  /*top: 100%;*/
+  left: 0; }
+
+#varInfo {
+  width: auto;
+  position: absolute; }
+
+.triangle {
+  position: relative;
+  transform: rotateZ(45deg);
+  right: 40px;
+  top: 10px;
+  display: inline-block;
+  opacity: 0;
+  height: 20px;
+  width: 20px;
+  background-color: black; }
 
 /*# sourceMappingURL=variant.css.map */

@@ -131,8 +131,12 @@ function renderJsonHeatMap() {
                   triangle
                     .style("left", exactMouse(d3.mouse(this)[0], gridSize) + 40 + "px")
                     .style("top", "-70px");
+                  // triangle.transition()
+                  //   .duration(300)
+                  //   .style("left", d3.mouse(this)[0] + 40 + "px")
+                  //   .style("top", "-60px");
                   triangle.transition()
-                    .duration(300)
+                    .duration(200)
                     .style("opacity", 1);
                 }))
               .on('mouseout', (function(d) {
@@ -193,6 +197,52 @@ var svgHeat = d3.select("#chart").append("svg")
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+          days = ["Person 1", "Person 2", "Person 3"],
+          times = appendElements(viewRegStart, viewRegEnd, []);
+          datasets = [];
+
+      var svgHeat = d3.select("#chart").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var dayLabels = svgHeat.selectAll(".dayLabel")
+          .data(days)
+          .enter().append("text")
+            .text(function (d) { return d; })
+            .attr("x", 0)
+            .attr("y", function (d, i) { return i * gridSize; })
+            .style("text-anchor", "end")
+            .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
+            .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "dayLabel mono axis axis-workweek" : "dayLabel mono axis"); });
+
+      var timeLabels = svgHeat.selectAll(".timeLabel").data(times);
+
+      var timeLabelsEnter = timeLabels.enter().append("text")
+            .text(function(d) { return d; })
+            .attr("x", function(d, i) { return i * gridSize; })
+            .attr("y", 0)
+            .style("text-anchor", "middle")
+            .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+            .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
+
+
+      var removeTimeLabels = timeLabels.exit();
+      removeTimeLabels.remove();
+
+      var updateTimeLabels = timeLabels.transition()
+        updateTimeLabels
+        .transition(300)
+        // .data(appendElements(viewRegStart, viewRegEnd, []))
+        // .enter().append("text")
+        // .text(function(d) { return d; })
+        .attr("x", function(d, i) { return i * gridSize; })
+        .attr("y", 0)
+        .style("text-anchor", "middle")
+        .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+        .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
+      
 
 var dayLabels = svgHeat.selectAll(".dayLabel")
     .data(people)
