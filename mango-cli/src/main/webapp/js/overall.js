@@ -50,6 +50,7 @@ render(viewRefName, viewRegStart, viewRegEnd);
 
 
 // Functions
+
 function render(refName, start, end, mapQuality) {
   //Adding Reference rectangles
   setGlobalReferenceRegion(refName, start, end);
