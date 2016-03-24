@@ -1,5 +1,3 @@
-//Changes
-
 //Configuration Variables
 var readsHeight = 100;
 var padding = 3;
