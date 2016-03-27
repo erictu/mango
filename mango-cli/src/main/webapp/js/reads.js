@@ -30,7 +30,6 @@ for (var i = 0; i < samples.length; i++) {
 
 }
 
-
 function renderMergedReads(refName, start, end, quality) {
     // Define quality for reads
     quality = quality || 0;
@@ -134,19 +133,6 @@ function renderReadsByResolution(data, rawSample) {
         data['mismatches'] = typeof data['mismatches'] != "undefined" ? data['mismatches'] : [];
         data['indels'] = typeof data['indels'] != "undefined" ? data['indels'] : [];
         data['matePairs'] = typeof data['matePairs'] != "undefined" ? data['matePairs'] : [];
-        // document.write(data['dictionary']);
-        
-        // Renders reference visualization
-        refVis(data['dictionary']);
-        // Autocomplete function 
-        $('#autocomplete').autocomplete({
-          lookup: data['dictionary'],
-          onSelect: function (suggestion) {
-            var thehtml = '<strong>Name:</strong> '+suggestion.value;
-            $('#outputcontent').html(thehtml);
-          }
-        });
-
 
         var numTracks = d3.max(data["tracks"], function(d) {return d.track});
         numTracks = typeof numTracks != "undefined" ? numTracks : [];

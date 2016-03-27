@@ -7,66 +7,53 @@
     margin-bottom: 5px;
 }
 
-.nav-tabs .dropdown-menu, .nav-pills .dropdown-menu, .navbar .dropdown-menu {
-  margin-top: 0; }
-
-.dropdown-menu li {
-  width: 100%; }
-.dropdown-menu li:hover {
-  color: white;
-  background-color: #4682B4 !important; }
-
-.dropdown:hover .dropdown-menu {
-  display: block; }
-
-li label {
-  width: 100%;
-  font-weight: 300; }
-
-input[type=checkbox] {
-  display: none; }
-
-input[type=checkbox]:checked + li {
-  background: #5BC0DE; }
-
 body {
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 300; }
+    font-family: 'Open Sans', sans-serif;
+    font-weight:300;
+}
 
 h1 {
-  text-align: center;
-  margin: 10px 0 0 0;
-  color: #333333;
-  font-weight: 400;
-  text-transform: uppercase; }
+    text-align: center;
+    margin: 10px 0 0 0;
+    color: $dark-grey;
+    font-weight:400;
+    text-transform: uppercase;
+}
 
 h2 {
-  text-align: center;
-  margin: 0 0 10px 0;
-  color: #999999;
-  font-weight: 400; }
+    text-align: center;
+    margin: 0 0 10px 0;
+    color: $med-grey;
+    font-weight:400;
+}
 
 .highlight {
-  font-weight: 700; }
+    font-weight:700;
+}
 
 ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0 5px 0 5px;
-  float: left; }
-
+    list-style-type: none;
+    margin: 0;
+    padding: 0 5px 0 5px;
+    float: left;
+}
 li {
-  display: inline;
-  float: left;
-  padding: 0 0 0 5px; }
+    display: inline;
+    float: left;
+    padding: 0 0 0 5px;
+}
+.axis {
+  path, line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+  }
 
-.axis path, .axis line {
-  fill: none;
-  stroke: black;
-  shape-rendering: crispEdges; }
-.axis text {
-  font-family: sans-serif;
-  font-size: 11px; }
+  text {
+      font-family: sans-serif;
+      font-size: 11px;
+  }
+}
 
 div.tooltip {
     position: absolute;
@@ -83,11 +70,13 @@ div.tooltip {
 }
 
 input[type="text"] {
-  height: 22px;
-  padding: 4px 12px; }
+    height: 22px;
+    padding: 4px 12px;
+}
 
 .checkbox-inline {
-  margin-left: 15px; }
+    margin-left:15px;
+}
 
 #refVis {
   height: 180px;
@@ -138,44 +127,50 @@ h2.panel {
   margin-top: 10px;
   margin-bottom: 10px;
   border-radius: 5px;
+  padding: 20px;
   width: 260px;
   float:left; 
   z-index: 99999;}
 
 
 #refArea {
-  border-radius: 5px;
-  border: 1.5px solid #8AC007; }
+    border-radius: 5px;
+    border: 1.5px solid $refBorder;
+}
 
 #varArea {
-  border-radius: 5px;
-  border: 1.5px solid #FF9933; }
+    border-radius: 5px;
+    border: 1.5px solid $varBorder;
+}
 
 #featArea {
-  border-radius: 5px;
-  border: 1.5px solid #FF99CC; }
+    border-radius: 5px;
+    border: 1.5px solid $featBorder;
+}
 
 #readsArea {
-  padding: 0px; }
+  padding: 0px;
+}
 
 .graphArea {
-  padding: 3px; }
+  padding: 3px;
+}
 
 .coverage-svg {
-  overflow: visible !important; }
+  overflow: visible !important;
+}
 
 .samples {
-  border-radius: 5px;
-  border: 1.5px solid #996633;
-  padding: 3px;
-  padding-bottom: 8px; }
-  .samples .col-md-10 {
-    overflow-x: hidden; }
+    border-radius: 5px;
+    border: 1.5px solid $readBorder;
+    padding: 3px;
+    padding-bottom: 8px;
 
 .sampleCoverage {
-  border-bottom: 1px solid #e7e7e7;
+  border-bottom: 1px solid $covBorder;
   margin-bottom: 5px;
-  padding-bottom: 5px; }
+  padding-bottom: 5px;
+}
 
 .ui-resizable-handle {
   position: absolute;
@@ -184,15 +179,17 @@ h2.panel {
   display: block; }
 
 .ui-resizable {
-  margin-bottom: 30px; }
+  margin-bottom: 30px
+}
 
 .ui-resizable-s {
   background: linear-gradient(#8A8A8A, #2F2F2F);
   border-top: 1px solid #111;
   border-bottom: 1px solid #111;
-  box-shadow: inset 0 1px 0 #6e6e6e, 0 2px 2px rgba(0, 0, 0, 0.4);
-  height: 10px;
-  bottom: 0px; }
+  box-shadow: inset 0 1px 0 #6e6e6e,0 2px 2px rgba(0,0,0,0.4);
+  height:10px;
+  bottom: 0px;
+}
 
 .ui-resizable-s:after {
   content: "-";
@@ -202,11 +199,13 @@ h2.panel {
   left: calc(50% - 12px);
   height: 2px;
   width: 25px;
-  background-color: rgba(0, 0, 0, 0.4);
-  margin: 3px; }
+  background-color:rgba(0,0,0,0.4);
+  margin:3px;
+}
 
 .col-md-10 {
-  border-left: 1px solid #e7e7e7; }
+  border-left: 1px solid $covBorder;
+}
 
 .refDisabled {
   pointer-events: none;
@@ -223,14 +222,15 @@ h2.panel {
   margin: 0;
   /*padding: 5px;*/
   /*border-radius: 3px;*/
-  margin: 5px 0 0 0; }
-
+  margin: 5px 0 0 0;
+}
 #searchfield form .biginput {
   height: 22px;
-  padding: 4px 12px; }
-
+  padding: 4px 12px;
+}
 #searchfield form .biginput:focus {
-  color: #858585; }
+  color: #858585;
+}
 
 .flatbtn {
   -webkit-box-sizing: border-box;
@@ -251,40 +251,26 @@ h2.panel {
   vertical-align: middle;
   cursor: pointer;
   text-transform: uppercase;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px;
   -webkit-box-shadow: 0 1px 0 rgba(15, 15, 15, 0.3);
   -moz-box-shadow: 0 1px 0 rgba(15, 15, 15, 0.3);
-  box-shadow: 0 1px 0 rgba(15, 15, 15, 0.3); }
-
+  box-shadow: 0 1px 0 rgba(15, 15, 15, 0.3);
+}
 .flatbtn:hover {
   color: #fff;
-  background-color: #73c437; }
-
+  background-color: #73c437;
+}
 .flatbtn:active {
   -webkit-box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
-  -moz-box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
-  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1); }
+  -moz-box-shadow:inset 0 1px 5px rgba(0, 0, 0, 0.1);
+  box-shadow:inset 0 1px 5px rgba(0, 0, 0, 0.1);
+}
 
-.autocomplete-suggestions {
-  border: 1px solid #999;
-  background: #fff;
-  cursor: default;
-  overflow: auto; }
+.autocomplete-suggestions { border: 1px solid #999; background: #fff; cursor: default; overflow: auto; }
+.autocomplete-suggestion { padding: 10px 5px; font-size: 1.2em; white-space: nowrap; overflow: hidden; }
+.autocomplete-selected { background: #f0f0f0; }
+.autocomplete-suggestions strong { font-weight: normal; color: #3399ff; }
 
-.autocomplete-suggestion {
-  padding: 10px 5px;
-  font-size: 1.2em;
-  white-space: nowrap;
-  overflow: hidden; }
-
-.autocomplete-selected {
-  background: #f0f0f0; }
-
-.autocomplete-suggestions strong {
-  font-weight: normal;
-  color: #3399ff; }
-
-/*# sourceMappingURL=main.css.map */

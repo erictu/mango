@@ -48,9 +48,7 @@ d3.json(initJson, function(error, seqDict) {
 //All rendering of data, and everything setting new region parameters, is done here
 render(viewRefName, viewRegStart, viewRegEnd);
 
-
 // Functions
-
 function render(refName, start, end, mapQuality) {
   //Adding Reference rectangles
   setGlobalReferenceRegion(refName, start, end);
