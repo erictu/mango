@@ -53,7 +53,7 @@ text.axis-worktime {
 .d3-tip.n:after {
     margin: -1px 0 0 0;
     /*top: 100%;*/
-    left: 0;
+    /*left: 0;*/
 }
 
 #varInfo {
@@ -64,7 +64,7 @@ text.axis-worktime {
 .triangle {
     position: relative;
     transform: rotateZ(45deg);
-    right: 40px;
+    left: 80px;
     top: 10px;
     display: inline-block;
     opacity: 0;

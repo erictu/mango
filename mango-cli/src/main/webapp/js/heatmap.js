@@ -32,7 +32,6 @@ var exactMouse = (function(x, gridSize) {
   } else {
     return x; 
   }
-});
 
 function renderHeatMap(refName, start, end) {
   viewRegStart = start;
@@ -50,7 +49,6 @@ function renderJsonHeatMap() {
       return;
     }
     if (error) throw error;
-    console.log(data);
     //dynamically setting height of svg containers
     // var numTracks = d3.max(data, function(d) {return d.track});
     // var varTrackHeight = getTrackHeight()
@@ -136,7 +134,7 @@ function renderJsonHeatMap() {
                   //   .style("left", d3.mouse(this)[0] + 40 + "px")
                   //   .style("top", "-60px");
                   triangle.transition()
-                    .duration(200)
+                    .duration(300)
                     .style("opacity", 1);
                 }))
               .on('mouseout', (function(d) {
