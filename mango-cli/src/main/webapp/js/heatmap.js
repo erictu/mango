@@ -32,6 +32,7 @@ var exactMouse = (function(x, gridSize) {
   } else {
     return x; 
   }
+});
 
 function renderHeatMap(refName, start, end) {
   viewRegStart = start;
@@ -244,6 +245,14 @@ var svgHeat = d3.select("#chart").append("svg")
 
 var dayLabels = svgHeat.selectAll(".dayLabel")
     .data(people)
+var svgHeat = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var dayLabels = svgHeat.selectAll(".dayLabel")
+    .data(days)
     .enter().append("text")
       .text(function (d) { return d; })
       .attr("x", 0)

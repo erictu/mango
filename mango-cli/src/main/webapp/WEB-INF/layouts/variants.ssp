@@ -19,6 +19,7 @@
 <% render("templates/sidebar.ssp")%>
 
 <div class="heatmap">
+<<<<<<< c82f053b44c9b4933a583e2abd4c0dcfb75a7aa0
     <div id="scale"></div>
     <div id="chart"></div>
     <div id="varInfo">
@@ -26,6 +27,15 @@
     </div>
     <div id="dataset-picker"></div>
     <div id="debug"></div>
+=======
+  <div id="scale"></div>
+  <div id="chart"></div>
+  <div id="varInfo">
+    <div class="triangle"></div>
+  </div>
+  <div id="dataset-picker"></div>
+  <div id="debug"></div>
+>>>>>>> edits
 </div>
 
 <script>

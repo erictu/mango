@@ -1,0 +1,107 @@
+[  
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":9,
+      "end":13,
+      "track":0
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":19,
+      "end":20,
+      "track":0
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":29,
+      "end":31,
+      "track":0
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Ref",
+      "start":39,
+      "end":43,
+      "track":0
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Alt / Alt",
+      "start":49,
+      "end":50,
+      "track":0
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Ref",
+      "start":9,
+      "end":13,
+      "track":1
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Ref",
+      "start":19,
+      "end":20,
+      "track":1
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":29,
+      "end":31,
+      "track":1
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":39,
+      "end":43,
+      "track":1
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Alt / Alt",
+      "start":49,
+      "end":50,
+      "track":1
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":9,
+      "end":13,
+      "track":2
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":19,
+      "end":20,
+      "track":2
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Alt",
+      "start":29,
+      "end":31,
+      "track":2
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Ref / Ref",
+      "start":39,
+      "end":43,
+      "track":2
+   },
+   {  
+      "contigName":"chrM",
+      "alleles":"Alt / Alt",
+      "start":49,
+      "end":50,
+      "track":2
+   }
+]
