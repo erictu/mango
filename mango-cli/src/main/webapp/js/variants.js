@@ -61,6 +61,7 @@ function renderJsonVariants() {
 
     // Add the rectangles
     var variants = varSvgContainer.selectAll(".variant").data(data);
+    console.log(variants);
     var modify = variants.transition();
     modify
       .attr("x", (function(d) { return xAxisScale(d.start); }))
@@ -180,6 +181,7 @@ function renderVariantFrequency() {
       .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
 
     var newBars = freqBars.enter();
+    console.log(newBars);
     newBars.append("rect")
       .attr("class", "bar")
       .attr("fill", '#2E6DA4')

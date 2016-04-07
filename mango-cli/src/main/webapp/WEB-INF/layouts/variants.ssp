@@ -1,7 +1,9 @@
 <%@ val viewRegion: (String, String, String) %>
 <% attributes("page") = "variants" %>
 
-
+<% render("../templates/head.ssp")%>
+<% render("../navigation/navigation.ssp") %>
+<% render("../navigation/panAndZoom.ssp") %>
 <html>
 
     <% render("templates/head.ssp")%>
@@ -15,6 +17,16 @@
     </div>    
 
 <% render("templates/sidebar.ssp")%>
+
+<div class="heatmap">
+    <div id="scale"></div>
+    <div id="chart"></div>
+    <div id="varInfo">
+        <div class="triangle"></div>
+    </div>
+    <div id="dataset-picker"></div>
+    <div id="debug"></div>
+</div>
 
 <script>
   var viewRefName = "${viewRegion._1}";

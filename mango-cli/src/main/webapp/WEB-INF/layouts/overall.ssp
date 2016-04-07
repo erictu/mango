@@ -55,7 +55,6 @@
 
     var width = window.innerWidth - 18;
 
-
 </script>
 
 <script src="js/reads.js"></script>
