@@ -1,4 +1,8 @@
 <%@ val viewRegion: (String, String, String) %>
+<%@ val samples: String ="ChrM" %>
+<%@ val variantsExist: Boolean = true%>
+<%@ val featuresExist: Boolean = true%>
+<%@ val readsExist: Boolean = true%>
 <% attributes("page") = "variants" %>
 
 <% render("../templates/head.ssp")%>
@@ -19,7 +23,6 @@
 <% render("templates/sidebar.ssp")%>
 
 <div class="heatmap">
-<<<<<<< c82f053b44c9b4933a583e2abd4c0dcfb75a7aa0
     <div id="scale"></div>
     <div id="chart"></div>
     <div id="varInfo">
@@ -27,15 +30,6 @@
     </div>
     <div id="dataset-picker"></div>
     <div id="debug"></div>
-=======
-  <div id="scale"></div>
-  <div id="chart"></div>
-  <div id="varInfo">
-    <div class="triangle"></div>
-  </div>
-  <div id="dataset-picker"></div>
-  <div id="debug"></div>
->>>>>>> edits
 </div>
 
 <script>
@@ -43,11 +37,20 @@
   var viewRegStart = parseInt(${viewRegion._2}, 10);
   var viewRegEnd = parseInt(${viewRegion._3}, 10);
   var width = window.innerWidth - 18;
+   <!-- Define Global Variables -->
+  var mapQuality = 100;
+  var variantsExist = true; //${variantsExist};
+  var featuresExist = true; //${featuresExist};
+  var sampleId = "${samples}";
+  var readsExist = true;
 </script>
+<!-- <script src="js/reads.js"></script> -->
 <script src="js/utilities.js"></script>
 <script src="js/variants.js"></script>
-<script src="js/formSubmit.js"></script>
 <script src="js/reference.js"></script>
+<script src="js/formSubmit.js"></script>
+<!-- <script src="js/overall.js"></script> -->
+<script src="js/heatmap.js"</script>
 <script>
   renderVariantFrequency(viewRefName, viewRegStart, viewRegEnd);
   renderVariants(viewRefName, viewRegStart, viewRegEnd);

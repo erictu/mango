@@ -50,6 +50,10 @@ function renderJsonHeatMap() {
       return;
     }
     if (error) throw error;
+<<<<<<< 090dce3360a6d55e694c6e99d575e627b9f9642e
+=======
+    console.log(data);
+>>>>>>> Attempted to fix js files in wrong order
     //dynamically setting height of svg containers
     // var numTracks = d3.max(data, function(d) {return d.track});
     // var varTrackHeight = getTrackHeight()
@@ -252,7 +256,7 @@ var svgHeat = d3.select("#chart").append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 var dayLabels = svgHeat.selectAll(".dayLabel")
-    .data(days)
+    .data(people)
     .enter().append("text")
       .text(function (d) { return d; })
       .attr("x", 0)
