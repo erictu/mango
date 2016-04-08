@@ -104,10 +104,14 @@ input[type="text"] {
   position: absolute;
   text-align: center;
 <<<<<<< HEAD
+<<<<<<< HEAD
   top: 60px;
 =======
   top: 170px;
 >>>>>>> c936174... added static RefVis ring chart read in real data
+=======
+  top: 50px;
+>>>>>>> f9c4b56... changes to ssp files in overalls and variants
   width: 80px;
   z-index: 999999; }
 
