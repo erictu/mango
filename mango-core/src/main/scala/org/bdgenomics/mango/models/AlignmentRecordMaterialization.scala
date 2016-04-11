@@ -181,6 +181,7 @@ class AlignmentRecordMaterialization(s: SparkContext,
           val loaded = loadFromFile(region, k)
           loaded.persist(StorageLevel.MEMORY_AND_DISK)
           println(loaded.count)
+          println(loaded.count)
           val alignmentData = loaded
             .map(r => (ReferenceRegion(r), r))
             .partitionBy(partitioner)
