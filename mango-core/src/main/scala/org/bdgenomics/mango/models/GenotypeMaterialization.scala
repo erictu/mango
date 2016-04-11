@@ -48,6 +48,15 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
     sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
   }
 
+  //Method not using IntervalRDD, assumes just one key
+  def getRegRDD(region: ReferenceRegion, k: String): RDD[(ReferenceRegion, Genotype)] = {
+    val data = loadFromFile(region, k)
+      .map(r => (ReferenceRegion(ReferencePosition(r)), r))
+      .partitionBy(partitioner)
+    data.persist(StorageLevel.MEMORY_AND_DISK)
+    data
+  }
+
   override def getFileReference(fp: String): String = {
     fp
   }
