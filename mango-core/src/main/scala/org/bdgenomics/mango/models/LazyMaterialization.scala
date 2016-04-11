@@ -37,10 +37,10 @@ abstract class LazyMaterialization[T: ClassTag, S: ClassTag] extends Serializabl
   def partitioner: Partitioner
 
   def setPartitioner: Partitioner = {
-    if (sc.isLocal)
+    // if (sc.isLocal)
       new HashPartitioner(partitions)
-    else
-      GenomicRegionPartitioner(partitions, dict)
+    // else
+      // GenomicRegionPartitioner(partitions, dict)
   }
 
   def getDictionary: SequenceDictionary = {
