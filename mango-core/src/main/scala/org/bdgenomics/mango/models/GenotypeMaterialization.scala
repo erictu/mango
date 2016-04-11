@@ -43,9 +43,11 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
   val partitioner = setPartitioner
 
   override def loadAdam(region: ReferenceRegion, fp: String): RDD[Genotype] = {
-    val pred: FilterPredicate = ((LongColumn("variant.end") >= region.start) && (LongColumn("variant.start") <= region.end) && (BinaryColumn("variant.contig.contigName") === (region.referenceName)))
+//    val pred: FilterPredicate = ((LongColumn("variant.end") >= region.start) && (LongColumn("variant.start") <= region.end) && (BinaryColumn("variant.contig.contigName") === (region.referenceName)))
+//    val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
+//    sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
     val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
-    sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
+    sc.loadParquetGenotypes(fp, projection = Some(proj)).filterByOverlappingRegion(region)
   }
 
   //Method not using IntervalRDD, assumes just one key
