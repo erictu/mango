@@ -50,10 +50,6 @@ function renderJsonHeatMap() {
       return;
     }
     if (error) throw error;
-<<<<<<< 090dce3360a6d55e694c6e99d575e627b9f9642e
-=======
-    console.log(data);
->>>>>>> Attempted to fix js files in wrong order
     //dynamically setting height of svg containers
     // var numTracks = d3.max(data, function(d) {return d.track});
     // var varTrackHeight = getTrackHeight()
@@ -204,59 +200,8 @@ var svgHeat = d3.select("#chart").append("svg")
           times = appendElements(viewRegStart, viewRegEnd, []);
           datasets = [];
 
-      var svgHeat = d3.select("#chart").append("svg")
-          .attr("width", width + margin.left + margin.right)
-          .attr("height", height + margin.top + margin.bottom)
-          .append("g")
-          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-      var dayLabels = svgHeat.selectAll(".dayLabel")
-          .data(days)
-          .enter().append("text")
-            .text(function (d) { return d; })
-            .attr("x", 0)
-            .attr("y", function (d, i) { return i * gridSize; })
-            .style("text-anchor", "end")
-            .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
-            .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "dayLabel mono axis axis-workweek" : "dayLabel mono axis"); });
-
-      var timeLabels = svgHeat.selectAll(".timeLabel").data(times);
-
-      var timeLabelsEnter = timeLabels.enter().append("text")
-            .text(function(d) { return d; })
-            .attr("x", function(d, i) { return i * gridSize; })
-            .attr("y", 0)
-            .style("text-anchor", "middle")
-            .attr("transform", "translate(" + gridSize / 2 + ", -6)")
-            .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
-
-
-      var removeTimeLabels = timeLabels.exit();
-      removeTimeLabels.remove();
-
-      var updateTimeLabels = timeLabels.transition()
-        updateTimeLabels
-        .transition(300)
-        // .data(appendElements(viewRegStart, viewRegEnd, []))
-        // .enter().append("text")
-        // .text(function(d) { return d; })
-        .attr("x", function(d, i) { return i * gridSize; })
-        .attr("y", 0)
-        .style("text-anchor", "middle")
-        .attr("transform", "translate(" + gridSize / 2 + ", -6)")
-        .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
-      
-
 var dayLabels = svgHeat.selectAll(".dayLabel")
-    .data(people)
-var svgHeat = d3.select("#chart").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-var dayLabels = svgHeat.selectAll(".dayLabel")
-    .data(people)
+    .data(days)
     .enter().append("text")
       .text(function (d) { return d; })
       .attr("x", 0)
@@ -264,6 +209,51 @@ var dayLabels = svgHeat.selectAll(".dayLabel")
       .style("text-anchor", "end")
       .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
       .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "dayLabel mono axis axis-workweek" : "dayLabel mono axis"); });
+
+var timeLabels = svgHeat.selectAll(".timeLabel").data(times);
+
+var timeLabelsEnter = timeLabels.enter().append("text")
+      .text(function(d) { return d; })
+      .attr("x", function(d, i) { return i * gridSize; })
+      .attr("y", 0)
+      .style("text-anchor", "middle")
+      .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+      .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
+
+
+var removeTimeLabels = timeLabels.exit();
+removeTimeLabels.remove();
+
+var updateTimeLabels = timeLabels.transition()
+  updateTimeLabels
+  .transition(300)
+  // .data(appendElements(viewRegStart, viewRegEnd, []))
+  // .enter().append("text")
+  // .text(function(d) { return d; })
+  .attr("x", function(d, i) { return i * gridSize; })
+  .attr("y", 0)
+  .style("text-anchor", "middle")
+  .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+  .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
+      
+
+// var dayLabels = svgHeat.selectAll(".dayLabel")
+//     .data(people)
+// var svgHeat = d3.select("#chart").append("svg")
+//     .attr("width", width + margin.left + margin.right)
+//     .attr("height", height + margin.top + margin.bottom)
+//     .append("g")
+//     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// var dayLabels = svgHeat.selectAll(".dayLabel")
+//     .data(days)
+//     .enter().append("text")
+//       .text(function (d) { return d; })
+//       .attr("x", 0)
+//       .attr("y", function (d, i) { return i * gridSize; })
+//       .style("text-anchor", "end")
+//       .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
+//       .attr("class", function (d, i) { return ((i >= 0 && i <= 4) ? "dayLabel mono axis axis-workweek" : "dayLabel mono axis"); });
 
 var timeLabels = svgHeat.selectAll(".timeLabel").data(times);
 
