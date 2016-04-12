@@ -332,6 +332,7 @@ class VizServlet extends ScalatraServlet {
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
       val variantRDD = VizReads.variantData.getRegRDD(viewRegion, VizReads.variantsPaths(0))
+      println(variantRDD.count)
       write(VariantLayout(variantRDD))
     }
   }
