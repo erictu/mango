@@ -43,19 +43,25 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
   val partitioner = setPartitioner
 
   override def loadAdam(region: ReferenceRegion, fp: String): RDD[Genotype] = {
-//    val pred: FilterPredicate = ((LongColumn("variant.end") >= region.start) && (LongColumn("variant.start") <= region.end) && (BinaryColumn("variant.contig.contigName") === (region.referenceName)))
-//    val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
-//    sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
+    val pred: FilterPredicate = ((LongColumn("variant.end") >= region.start) && (LongColumn("variant.start") <= region.end) && (BinaryColumn("variant.contig.contigName") === (region.referenceName)))
     val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
-    sc.loadParquetGenotypes(fp, projection = Some(proj)).filterByOverlappingRegion(region)
+    sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
+//    val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
+//    sc.loadParquetGenotypes(fp, projection = Some(proj)).filterByOverlappingRegion(region)
   }
 
   //Method not using IntervalRDD, assumes just one key
   def getRegRDD(region: ReferenceRegion, k: String): RDD[(ReferenceRegion, Genotype)] = {
-    val data = loadFromFile(region, k)
+    val loaded = loadFromFile(region, k)
+    loaded.persist(StorageLevel.MEMORY_AND_DISK)
+    println(loaded.count)
+    println(loaded.count)
+    val data = loaded
       .map(r => (ReferenceRegion(ReferencePosition(r)), r))
       .partitionBy(partitioner)
     data.persist(StorageLevel.MEMORY_AND_DISK)
+    println(data.count)
+    println(data.count)
     data
   }
 
@@ -96,9 +102,16 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
         val start = Math.min(region.start, end)
         val reg = new ReferenceRegion(region.referenceName, start, end)
         ks.map(k => {
-          val data = loadFromFile(reg, k)
+          val loaded = loadFromFile(reg, k)
+          loaded.persist(StorageLevel.MEMORY_AND_DISK)
+          println(loaded.count)
+          println(loaded.count)
+          val data = loaded
             .map(r => (ReferenceRegion(ReferencePosition(r)), r))
             .partitionBy(partitioner)
+          data.persist(StorageLevel.MEMORY_AND_DISK)
+          println(data.count)
+          println(data.count)
           if (intRDD == null) {
             intRDD = IntervalRDD(data)
             intRDD.persist(StorageLevel.MEMORY_AND_DISK)

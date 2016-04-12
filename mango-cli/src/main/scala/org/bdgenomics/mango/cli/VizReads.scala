@@ -331,17 +331,25 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      //      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      //      variantRDDOption match {
-      //        case Some(_) => {
-      //          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-      //          write(VariantLayout(variantRDD))
-      //        } case None => {
-      //          write("")
-      //        }
-      //      }
       val variantRDD = VizReads.variantData.getRegRDD(viewRegion, VizReads.variantsPaths(0))
       write(VariantLayout(variantRDD))
+    }
+  }
+
+  get("/variantsInt/:ref") {
+    VizTimers.VarRequest.time {
+      contentType = "json"
+      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+        VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
+      variantRDDOption match {
+        case Some(_) => {
+          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
+          write(VariantLayout(variantRDD))
+        } case None => {
+          write("")
+        }
+      }
     }
   }
 
