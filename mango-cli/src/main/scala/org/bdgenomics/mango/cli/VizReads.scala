@@ -345,6 +345,7 @@ class VizServlet extends ScalatraServlet {
       variantRDDOption match {
         case Some(_) => {
           val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
+          println(variantRDD.count)
           write(VariantLayout(variantRDD))
         } case None => {
           write("")

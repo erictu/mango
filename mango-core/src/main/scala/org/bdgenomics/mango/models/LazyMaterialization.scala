@@ -116,6 +116,8 @@ abstract class LazyMaterialization[T: ClassTag, S: ClassTag] extends Serializabl
           case None =>
           // DO NOTHING
         }
+        println(intRDD.count())
+        println(intRDD.count())
         Option(intRDD.filterByInterval(region))
       case None =>
         None
