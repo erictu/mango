@@ -46,8 +46,8 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
     val pred: FilterPredicate = ((LongColumn("variant.end") >= region.start) && (LongColumn("variant.start") <= region.end) && (BinaryColumn("variant.contig.contigName") === (region.referenceName)))
     val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
     sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
-//    val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
-//    sc.loadParquetGenotypes(fp, projection = Some(proj)).filterByOverlappingRegion(region)
+    //    val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
+    //    sc.loadParquetGenotypes(fp, projection = Some(proj)).filterByOverlappingRegion(region)
   }
 
   //Method not using IntervalRDD, assumes just one key
@@ -101,6 +101,8 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
           Math.min(region.end, seqRecord.get.length)
         val start = Math.min(region.start, end)
         val reg = new ReferenceRegion(region.referenceName, start, end)
+        println("IN PUT")
+        println(ks)
         ks.map(k => {
           val loaded = loadFromFile(reg, k)
           loaded.persist(StorageLevel.MEMORY_AND_DISK)

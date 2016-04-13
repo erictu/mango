@@ -76,6 +76,8 @@ abstract class LazyMaterialization[T: ClassTag, S: ClassTag] extends Serializabl
   * Logs key and region values in a bookkeeping structure per chromosome
   */
   protected def rememberValues(region: ReferenceRegion, ks: List[String]) = {
+    println("INSERTERING THESE SAMPLES INTO THE TREE")
+    println(ks)
     if (bookkeep.contains(region.referenceName)) {
       bookkeep(region.referenceName).insert(region, ks.toIterator)
     } else {
@@ -111,6 +113,8 @@ abstract class LazyMaterialization[T: ClassTag, S: ClassTag] extends Serializabl
         regionsOpt match {
           case Some(_) =>
             for (r <- regionsOpt.get) {
+              println("TRANSFERING TO PUT")
+              println(ks)
               put(r, ks)
             }
           case None =>

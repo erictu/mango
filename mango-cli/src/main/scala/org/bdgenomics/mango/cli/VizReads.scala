@@ -342,7 +342,9 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+      println(VizReads.variantsPaths)
       val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
+      //just gives you the filePath
       variantRDDOption match {
         case Some(_) => {
           val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
