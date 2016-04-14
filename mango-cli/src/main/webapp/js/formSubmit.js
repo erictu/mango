@@ -67,7 +67,6 @@ function checkForm(form) {
 function checkVariantForm(form) {
   var elements = validateFormElements(form);
   if (elements != undefined) {
-    renderVariantFrequency();
     renderVariants(elements.refName, elements.newStart, elements.newEnd);
     renderReference(elements.refName, elements.newStart, elements.newEnd);
   }
