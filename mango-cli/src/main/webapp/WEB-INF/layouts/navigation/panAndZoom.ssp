@@ -64,7 +64,6 @@
             region:
             <input id="autocomplete" type="text" name="info" size="20" class="alignment-search form-control" placeholder="sample:refName:start-end">
         </li>
-
         #if (isOverall)
             <li>
                 <input name="Submit button"

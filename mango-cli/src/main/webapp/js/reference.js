@@ -4,45 +4,45 @@ var refHeight = 38;
 var width = $(".graphArea").width();
 
 var refContainer = d3.select("#refArea")
-  .append("svg")
-  .attr("width", width)
-  .attr("height", refHeight);
+    .append("svg")
+    .attr("width", width)
+    .attr("height", refHeight);
 
 // Making hover box
 var refDiv = d3.select("#refArea")
-.append("div")
-.attr("class", "tooltip")
-.style("opacity", 0);
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
 // Vertical Guidance Line for refContainer
 var refVertLine = refContainer.append('line')
     .attr({
-      'x1': 0,
-      'y1': 0,
-      'x2': 0,
-      'y2': refHeight
+        'x1': 0,
+        'y1': 0,
+        'x2': 0,
+        'y2': refHeight
     })
     .attr("stroke", "#002900")
     .attr("class", "verticalLine");
 
 // Mousemove for ref containers
 refContainer.on('mousemove', function () {
-  var xPosition = d3.mouse(this)[0];
-  d3.selectAll(".verticalLine")
-    .attr({
-      "x1" : xPosition,
-      "x2" : xPosition
-    })
+    var xPosition = d3.mouse(this)[0];
+    d3.selectAll(".verticalLine")
+        .attr({
+            "x1" : xPosition,
+            "x2" : xPosition
+        })
 });
 
 function renderReference(viewRefName, viewRegStart, viewRegEnd, callback) {
-  var jsonLocation = "/reference/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+    var jsonLocation = "/reference/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
 
-  refContainer.select(".axis").remove();
+    refContainer.select(".axis").remove();
 
-  // Create the scale for the axis
- //  var xAxisScale = xAxis(viewRegStart, viewRegEnd, width);
- var xAxisScale = d3.scale.linear()
+    // Create the scale for the axis
+    //  var xAxisScale = xAxis(viewRegStart, viewRegEnd, width);
+    var xAxisScale = d3.scale.linear()
         .domain([viewRegStart, viewRegEnd])
         .range([0, width]);
 
@@ -63,9 +63,8 @@ function renderReference(viewRefName, viewRegStart, viewRegEnd, callback) {
         } else if (error.status == 413) { // entity too large
             data = "";
         }
-    }
 
-    var positions = Array.apply(null, {length: data.length}).map(Number.call, Number);
+        var positions = Array.apply(null, {length: data.length}).map(Number.call, Number);
 
     data = d3.zip(positions, data.split(""));
     data = data.map(function(v) {
@@ -73,16 +72,8 @@ function renderReference(viewRefName, viewRegStart, viewRegEnd, callback) {
             "position": v[0] + viewRegStart,
             "reference": v[1]
         }
+        callback(true);
     });
-
-    // render reference for low or high resolution depending on base range
-    if (viewRegEnd - viewRegStart > 100) {
-      renderLowResRef(data, refContainer, refDiv);
-    } else {
-      renderHighResRef(data, refContainer);
-    }
-    callback(true);
-  });
 
 
 }
@@ -160,39 +151,39 @@ function renderLowResRef(data, refContainer, refDiv) {
 
 // Renders reference at per base resolution
 function renderHighResRef(data, refContainer) {
-  refContainer.selectAll(".refrect").remove();
-  var refString = refContainer.selectAll(".reftext")
-                  .data(data);
+    refContainer.selectAll(".refrect").remove();
+    var refString = refContainer.selectAll(".reftext")
+        .data(data);
 
-  var modify = refString.transition();
-  modify
-      .attr("x", 0)
-      .attr("dx", function(d, i) {
-           return i/(viewRegEnd-viewRegStart) * width - (width/(viewRegEnd-viewRegStart))/2 ;
-      })
-      .text( function (d) { return d.reference; })
-      .attr("fill", function(d) {
-        if (d.reference === "N") return nColor;
-        else return baseColors[d.reference];
-      });
+    var modify = refString.transition();
+    modify
+        .attr("x", 0)
+        .attr("dx", function(d, i) {
+            return i/(viewRegEnd-viewRegStart) * width - (width/(viewRegEnd-viewRegStart))/2 ;
+        })
+        .text( function (d) { return d.reference; })
+        .attr("fill", function(d) {
+            if (d.reference === "N") return nColor;
+            else return baseColors[d.reference];
+        });
 
-  var newData = refString.enter();
-  newData
-      .append("text")
-      .attr("class", "reftext")
-      .attr("y", 30)
-      .attr("x", 0)
-      .attr("dx", function(d, i) {
-        return i/(viewRegEnd-viewRegStart) * width - (width/(viewRegEnd-viewRegStart))/2 ;
-          })
-      .text( function (d) { return d.reference; })
-      .attr("font-family", "Sans-serif")
-      .attr("font-weight", "bold")
-      .attr("font-size", "12px")
-      .attr("fill", function(d) {
-        if (d.reference === "N") return nColor;
-        else return baseColors[d.reference];
-      });
+    var newData = refString.enter();
+    newData
+        .append("text")
+        .attr("class", "reftext")
+        .attr("y", 30)
+        .attr("x", 0)
+        .attr("dx", function(d, i) {
+            return i/(viewRegEnd-viewRegStart) * width - (width/(viewRegEnd-viewRegStart))/2 ;
+        })
+        .text( function (d) { return d.reference; })
+        .attr("font-family", "Sans-serif")
+        .attr("font-weight", "bold")
+        .attr("font-size", "12px")
+        .attr("fill", function(d) {
+            if (d.reference === "N") return nColor;
+            else return baseColors[d.reference];
+        });
 
     var removed = refString.exit();
     removed.remove();
