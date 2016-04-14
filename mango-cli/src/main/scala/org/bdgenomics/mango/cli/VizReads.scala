@@ -37,6 +37,7 @@ import org.bdgenomics.mango.layout._
 import org.bdgenomics.mango.models.{ AlignmentRecordMaterialization, GenotypeMaterialization }
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
+import org.apache.spark.sql.SQLContext
 import org.fusesource.scalate.TemplateEngine
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.scalatra.ScalatraServlet
@@ -430,6 +431,7 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
   val companion: BDGCommandCompanion = VizReads
 
   override def run(sc: SparkContext): Unit = {
+    val sqlContext = new org.apache.spark.sql.SQLContext(sc)
     VizReads.sc = sc
 
     VizReads.partitionCount =
