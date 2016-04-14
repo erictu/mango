@@ -17,93 +17,95 @@
  */
 package org.bdgenomics.mango.layout
 
-import org.apache.spark.Logging
+import org.apache.spark.{ SparkContext, Logging }
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{ SQLContext, Row, DataFrame }
+import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.mango.util.Bookkeep
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 
-object VariantLayout extends Logging {
+class VariantLayout(sc: SparkContext) extends Logging {
 
-  /**
-   * An implementation of Variant Layout
-   *
-   * @param rdd: RDD of (ReferenceRegion, Genotype) tuples
-   * @return List of VariantJsons
-   */
-  def apply(rdd: RDD[(ReferenceRegion, Genotype)]): List[VariantJson] = {
-    val trackedData = rdd.mapPartitions(VariantLayout(_)).collect
-    val variantData = trackedData.zipWithIndex
-    variantData.flatMap(r => VariantJson(r._1.records, r._2)).toList
+  val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+  var fileMap: Map[String, DataFrame] = Map[String, DataFrame]()
+
+  var freqBook: Bookkeep = new Bookkeep(1000)
+  var varBook: Bookkeep = new Bookkeep(1000)
+
+  var wsetFreq: DataFrame = sqlContext.createDataFrame(sc.emptyRDD[Counts])
+  var wsetVar: DataFrame = sqlContext.createDataFrame(sc.emptyRDD[VariantSchema])
+
+  def loadChr(filePath: String): Unit = {
+    val df: DataFrame = sqlContext.read.load(filePath)
+    val chr: String = df.first.get(1).asInstanceOf[String] //TODO: should be contigName, correct based on schema
+    //TODO: perform schema projection here instead of in the get functions?
+    fileMap += (chr -> df)
   }
 
-  /**
-   * An implementation of Variant Layout
-   *
-   * @param iter: Iterator of (ReferenceRegion, Genotype) tuples
-   * @return List of Genotype Tracks
-   */
-  def apply(iter: Iterator[(ReferenceRegion, Genotype)]): Iterator[GenericTrack[Genotype]] = {
-    new VariantLayout(iter).collect
-  }
-}
-
-object VariantFreqLayout extends Logging {
-
-  /**
-   * An implementation of VariantFreqLayout
-   *
-   * @param rdd: RDD of (ReferenceRegion, Genotype) tuples
-   * @return List of VariantFreqJsons
-   */
-  def apply(rdd: RDD[(ReferenceRegion, Genotype)]): List[VariantFreqJson] = {
-    val variantFreq = rdd.map(rec => ((rec._2.getVariant.getStart, rec._2.getVariant.getEnd), rec._2)).countByKey
-    var freqJson = new ListBuffer[VariantFreqJson]
-    for (rec <- variantFreq) {
-      freqJson += VariantFreqJson(rec._1._1, rec._1._2, rec._2)
-    }
-    freqJson.toList
+  def getDF(chr: String): Option[DataFrame] = {
+    fileMap.get(chr)
   }
 
-}
-
-/**
- * An implementation of TrackedLayout for Genotype Data
- *
- * @param values Iterator of (ReferenceRegion, Genotype) tuples
- */
-class VariantLayout(values: Iterator[(ReferenceRegion, Genotype)]) extends TrackedLayout[Genotype, GenericTrackBuffer[Genotype]] with Logging {
-  val sequence = values.toArray
-  var trackBuilder = new ListBuffer[GenericTrackBuffer[Genotype]]()
-  val data = sequence.groupBy(_._2.getSampleId)
-  addTracks
-  trackBuilder = trackBuilder.filter(_.records.nonEmpty)
-
-  def addTracks {
-    for (rec <- data) {
-      trackBuilder += GenericTrackBuffer[Genotype](rec._2.toList)
+  def getFreq(region: ReferenceRegion): Array[String] = {
+    val df = getDF(region.referenceName)
+    df match {
+      case Some(_) => {
+        //TODO: contains all the samples right now
+        val matRegions: Option[List[ReferenceRegion]] = freqBook.getMaterializedRegions(region, List("all"))
+        if (!matRegions.isEmpty) {
+          for (reg <- matRegions.get) {
+            val filt = df.get.select("variant__contig__contigName", "variant__start", "sampleId")
+            val counts = filt.filter(filt("variant__start") >= reg.start && filt("variant__start") <= reg.end).groupBy("variant__start").count
+            wsetFreq = wsetFreq.unionAll(counts)
+            freqBook.rememberValues(reg, "all") //TODO: contains all the samples right now
+            wsetFreq.cache
+          }
+        }
+        //Fetching data from working set
+        wsetFreq.filter(wsetFreq("variant__start") >= region.start && wsetFreq("variant__start") <= region.end).toJSON.collect
+      }
+      case None => {
+        println("FILE NOT PROVIDED")
+        Array[String]() //return empty array
+      }
     }
   }
-  def collect: Iterator[GenericTrack[Genotype]] = trackBuilder.map(t => Track[Genotype](t)).toIterator
-}
 
-object VariantJson {
-
-  /**
-   * An implementation of VariantJson
-   *
-   * @param recs: List of (ReferenceRegion, Genotype) tuples
-   * @return List of VariantJsons
-   */
-  def apply(recs: List[(ReferenceRegion, Genotype)], track: Int): List[VariantJson] = {
-    recs.map(rec => new VariantJson(rec._2.getVariant.getContig.getContigName, rec._2.getSampleId,
-      rec._2.getAlleles.map(_.toString).mkString(" / "), rec._2.getVariant.getStart,
-      rec._2.getVariant.getEnd, track))
+  def get(region: ReferenceRegion): List[VariantJson] = {
+    val df = getDF(region.referenceName)
+    df match {
+      case Some(_) => {
+        //TODO: contains all the samples right now
+        val matRegions: Option[List[ReferenceRegion]] = varBook.getMaterializedRegions(region, List("all"))
+        if (!matRegions.isEmpty) {
+          for (reg <- matRegions.get) {
+            val filt = df.get.select("variant__contig__contigName", "variant__start", "sampleId")
+            val data = filt.filter(filt("variant__start") >= reg.start && filt("variant__start") <= reg.end)
+            wsetVar = wsetVar.unionAll(data)
+            varBook.rememberValues(reg, "all") //TODO: contains all the samples right now
+            wsetVar.cache
+          }
+        }
+        //Fetching data from working set
+        val total = wsetVar.filter(wsetVar("variant__start") >= region.start && wsetVar("variant__start") <= region.end)
+        val zipped: RDD[((String, Iterable[Row]), Long)] = wsetVar.rdd.groupBy(r => r.get(3).asInstanceOf[String]).zipWithIndex
+        zipped.flatMap(recs => recs._1._2.map(r => new VariantJson(r.get(0).toString, recs._1._1, r.get(1).asInstanceOf[Long],
+          r.get(2).asInstanceOf[Long], recs._2))).collect.toList
+      }
+      case None => {
+        println("FILE NOT PROVIDED")
+        List[VariantJson]() //return empty array
+      }
+    }
   }
 }
 
 // tracked json objects for genotype visual data
-case class VariantJson(contigName: String, sampleId: String, alleles: String, start: Long, end: Long, track: Long)
-case class VariantFreqJson(start: Long, end: Long, count: Long)
+case class VariantJson(contigName: String, sampleId: String, start: Long, end: Long, track: Long)
+case class VariantSchema(variant__contig__contigName: String, variant__start: Long, sampleId: String)
+case class Counts(variant__start: Long, count: Int)

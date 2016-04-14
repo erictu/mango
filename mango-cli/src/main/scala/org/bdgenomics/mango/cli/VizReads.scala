@@ -25,6 +25,7 @@ import net.liftweb.json.Serialization.write
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.projections.{ FeatureField, Projection }
@@ -38,6 +39,7 @@ import org.bdgenomics.mango.models.GenotypeMaterialization
 import org.bdgenomics.mango.tiling.AlignmentRecordTile
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
+import org.apache.spark.sql.{ DataFrame, SQLContext }
 import org.fusesource.scalate.TemplateEngine
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.scalatra._
@@ -84,7 +86,7 @@ object VizReads extends BDGCommandCompanion with Logging {
   var globalDict: SequenceDictionary = null
   var refRDD: ReferenceRDD = null
   var readsData: AlignmentRecordTile = null
-  var variantData: GenotypeMaterialization = null
+  var varData: VariantLayout = null
   var server: org.eclipse.jetty.server.Server = null
   var screenSize: Int = 1000
 
@@ -294,16 +296,7 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantLayout(variantRDD))
-        } case None => {
-          write("")
-        }
-      }
-
+      write(VizReads.varData.get(viewRegion))
     }
   }
 
@@ -312,15 +305,8 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantFreqLayout(variantRDD))
-        } case None => {
-          write("")
-        }
-      }
+      val results = VizReads.varData.getFreq(viewRegion)
+      write(results)
     }
   }
 
@@ -369,6 +355,7 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
 
   override def run(sc: SparkContext): Unit = {
     VizReads.sc = sc
+    VizReads.sqlContext = new SQLContext(sc)
 
     VizReads.partitionCount =
       if (args.partitionCount <= 0)

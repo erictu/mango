@@ -141,6 +141,7 @@ function renderVariantFrequency() {
       return;
     }
 
+    data = data.map(JSON.parse);
     y.domain([0, d3.max(data, function(d) { return d.count; })]);
 
     svg.select(".axis").remove();
@@ -163,22 +164,23 @@ function renderVariantFrequency() {
 
     var modifyBars = freqBars.transition();
     modifyBars
-      .attr("x", (function(d) { return xAxisScale(d.start); }))
-      .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }));
+      .attr("x", (function(d) { return xAxisScale(d.variant__start); }))
+      .attr("width", (function(d) { return Math.max(1*(width/(viewRegEnd-viewRegStart))); }));
 
     var newBars = freqBars.enter();
     newBars.append("rect")
       .attr("class", "bar")
       .attr("fill", '#2E6DA4')
-      .attr("x", (function(d) { return xAxisScale(d.start); }))
-      .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
+      .attr("x", (function(d) { return xAxisScale(d.variant__start); }))
+      .attr("width", (function(d) { return Math.max(1*(width/(viewRegEnd-viewRegStart))); }))
       .attr("y", function(d) { return y(d.count); })
       .attr("height", function(d) { return height - y(d.count); })
       .on("mouseover", function(d) {
         varDiv.transition()
           .duration(200)
           .style("opacity", .9);
-        varDiv.html("Samples with variant: " + d.count)
+        varDiv.html("Samples with variant: " + d.count + "<br>" +
+          "Position: " + d.variant__start)
           .style("left", (d3.event.pageX - 120) + "px")
           .style("top", (d3.event.pageY - 28) + "px");
       })
