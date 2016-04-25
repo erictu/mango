@@ -59,13 +59,25 @@ function renderMergedReads(refName, start, end, quality) {
         var selector = "#" + samples[i];
         renderd3Line(readCountSvgContainer[samples[i]], height);
 
+
         sampleData[i] = [];
         sampleData[i].mismatches = typeof data['mismatches'] != "undefined" ? data['mismatches'] : [];
         sampleData[i].indels = typeof data['indels'] != "undefined" ? data['indels'] : [];
-        binSize = typeof data['binSize'] != "undefined" ? data['binSize'] : 1;
+        sampleData[i].layers = typeof data['layers'] != "undefined" ? data['layers'] : 0;
 
-        renderMismatchCounts(sampleData[i].mismatches, samples[i]);
-        renderIndelCounts(sampleData[i].indels, samples[i]);
+        // Zoomed out too far for resolution. print mismatch path instead.
+        if(sampleData[i].layers > 0) {
+            sampleData[i] = data.data;
+            indelSvgContainer[samples[i]].selectAll(".indel").remove();
+            readCountSvgContainer[samples[i]].selectAll("g").remove();
+            renderMismatchPath(sampleData[i], samples[i]);
+        } else {
+            var removed = readCountSvgContainer[samples[i]].selectAll("path").remove();
+            renderMismatchCounts(sampleData[i].mismatches, samples[i]);
+            renderIndelCounts(sampleData[i].indels, samples[i]);
+        }
+
+
     }
     stopWait("#readsArea");
   });
@@ -78,6 +90,47 @@ function renderMergedReads(refName, start, end, quality) {
         }
     });
 }
+
+function renderMismatchPath(data, sample) {
+  var max = d3.max(data);
+
+  var removed = readCountSvgContainer[sample].selectAll("path").remove();
+
+  if (max <= 0)
+    return;
+
+  var index = []
+  for(var i = 0; i < data.length; i ++) {
+    index[i] = i;
+  }
+
+  data = d3.zip(index, data)
+
+  // Create the scale for the x axis
+  var xAxisScale = xRange(0, data.length, width);
+
+  // Create the scale for the y axis
+  var yAxisScale = d3.scale.linear()
+    .domain([max, 0])
+    .range([0, height]);
+
+  // Specify the area for the data being displayed
+  var area = d3.svg.area()
+    .x(function(d) {return xAxisScale(d[0]);})
+    .y0(height)
+    .y1(function(d) {return yAxisScale(d[1]);})
+    .interpolate("basis");
+
+
+  // Add the data area shape to the graph
+  readCountSvgContainer[sample]
+    .append("path")
+    .attr("d", area(data))
+    .style("fill", aColor)
+    .style("opacity", 0.3);
+
+}
+
 
 function renderAlignments(refName, start, end, quality, sample) {
     var isData = sample in readAlignmentSvgContainer;
