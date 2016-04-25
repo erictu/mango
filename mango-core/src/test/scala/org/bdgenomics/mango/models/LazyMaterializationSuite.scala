@@ -42,7 +42,6 @@ class LazyMaterializationSuite extends MangoFunSuite {
 
   // test reference data
   var referencePath = resourcePath("mm10_chrM.fa")
-  var chr20reference = resourcePath("chrom20fake.fa")
 
   sparkTest("assert the data pulled from a file is the same") {
     val refRDD = new ReferenceRDD(sc, referencePath)

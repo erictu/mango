@@ -19,8 +19,8 @@ package org.bdgenomics.mango.cli
 
 import java.io.File
 
+import edu.berkeley.cs.amplab.spark.intervalrdd.IntervalRDD
 import htsjdk.samtools.reference.IndexedFastaSequenceFile
-import htsjdk.samtools.{ SAMRecord, SamReader, SamReaderFactory }
 import net.liftweb.json.Serialization.write
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
@@ -31,10 +31,11 @@ import org.bdgenomics.adam.projections.{ FeatureField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.{ Feature, Genotype }
 import org.bdgenomics.mango.RDD.ReferenceRDD
-import org.bdgenomics.mango.core.util.{ ResourceUtils, VizUtils }
+import org.bdgenomics.mango.core.util.{ VizUtils }
 import org.bdgenomics.mango.filters.AlignmentRecordFilter
 import org.bdgenomics.mango.layout._
-import org.bdgenomics.mango.models.{ AlignmentRecordMaterialization, GenotypeMaterialization }
+import org.bdgenomics.mango.models.GenotypeMaterialization
+import org.bdgenomics.mango.tiling.AlignmentRecordTile
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.fusesource.scalate.TemplateEngine
@@ -82,31 +83,13 @@ object VizReads extends BDGCommandCompanion with Logging {
   var featuresExist: Boolean = false
   var globalDict: SequenceDictionary = null
   var refRDD: ReferenceRDD = null
-  var readsData: AlignmentRecordMaterialization = null
+  var readsData: AlignmentRecordTile = null
   var variantData: GenotypeMaterialization = null
   var server: org.eclipse.jetty.server.Server = null
   var screenSize: Int = 1
 
   def apply(cmdLine: Array[String]): BDGCommand = {
     new VizReads(Args4j[VizReadsArgs](cmdLine))
-  }
-
-  def printReferenceJson(region: ReferenceRegion): List[ReferenceJson] = VizTimers.PrintReferenceTimer.time {
-    val splitReferenceOpt: Option[String] = refRDD.getReference(region)
-    splitReferenceOpt match {
-      case Some(_) => {
-        val splitReference = splitReferenceOpt.get.split("")
-        var tracks = new scala.collection.mutable.ListBuffer[ReferenceJson]
-        var positionCount: Long = region.start
-        for (base <- splitReference) {
-          tracks += new ReferenceJson(base.toUpperCase, positionCount)
-          positionCount += 1
-        }
-        tracks.toList
-      } case None => {
-        List()
-      }
-    }
   }
 
   /**
@@ -195,7 +178,7 @@ class VizServlet extends ScalatraServlet {
           val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
           val sampleIds: List[String] = params("sample").split(",").toList
           val readQuality = params.getOrElse("quality", "0")
-          val dataOption = VizReads.readsData.multiget(viewRegion, sampleIds)
+          val dataOption = VizReads.readsData.get(viewRegion, Some(sampleIds)).asInstanceOf[Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]]]
           dataOption match {
             case Some(_) => {
               val filteredData =
@@ -241,7 +224,8 @@ class VizServlet extends ScalatraServlet {
           val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
           val region = new ReferenceRegion(params("ref").toString, params("start").toLong, end)
           val sampleIds: List[String] = params("sample").split(",").toList
-          write(VizReads.readsData.getFrequency(region, sampleIds))
+          val d = VizReads.readsData.layer0.getFrequency(region, sampleIds)
+          d
         } case None => write("")
       }
     }
@@ -256,45 +240,8 @@ class VizServlet extends ScalatraServlet {
       dictOpt match {
         case Some(_) => {
           val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
-          val region = new ReferenceRegion(params("ref").toString, params("start").toLong, end)
           val sampleIds: List[String] = params("sample").split(",").toList
-          val readQuality = params.getOrElse("quality", "0")
-          val diffReads = params.getOrElse("diff", "0") != "0"
-          val dataOption = VizReads.readsData.multiget(viewRegion, sampleIds)
-          dataOption match {
-            case Some(_) => {
-              val filteredData: RDD[(ReferenceRegion, CalculatedAlignmentRecord)] =
-                AlignmentRecordFilter.filterByRecordQuality(dataOption.get.toRDD(), readQuality)
-              val binSize = VizUtils.getBinSize(region, VizReads.screenSize)
-              var alignmentData: Map[String, List[MutationCount]] = MergedAlignmentRecordLayout(filteredData, binSize)
-
-              val fileMap = VizReads.readsData.getFileMap
-              var readRetJson: String = ""
-              if (diffReads) {
-                alignmentData = MergedAlignmentRecordLayout.diffRecords(sampleIds, alignmentData)
-              }
-              for (sample <- sampleIds) {
-                val sampleData = alignmentData.get(sample)
-                sampleData match {
-                  case Some(_) =>
-                    readRetJson += "\"" + sample + "\":" +
-                      "{ \"filename\": " + write(fileMap(sample)) +
-                      ", \"indels\": " + write(sampleData.get.filter(_.op != "M")) +
-                      ", \"mismatches\": " + write(sampleData.get.filter(_.op == "M")) +
-                      ", \"binSize\": " + binSize + "},"
-                  case None =>
-                    readRetJson += "\"" + sample + "\":" +
-                      "{ \"filename\": " + write(fileMap(sample)) + "},"
-                }
-
-              }
-              readRetJson = readRetJson.dropRight(1)
-              readRetJson = "{" + readRetJson + "}"
-              readRetJson
-            } case None => {
-              write("")
-            }
-          }
+          VizReads.readsData.get(viewRegion, Some(sampleIds))
         } case None => write("")
       }
     }
@@ -424,9 +371,10 @@ class VizServlet extends ScalatraServlet {
   get("/reference/:ref") {
     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref"))))
-    if (viewRegion.end - viewRegion.start > 2000)
-      write("")
-    else write(VizReads.printReferenceJson(viewRegion))
+    //    if (viewRegion.end - viewRegion.start > 2000)
+    //      write("")
+    //else
+    VizReads.refRDD.get(viewRegion)
   }
 }
 
@@ -450,45 +398,20 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
     VizReads.refRDD = new ReferenceRDD(sc, VizReads.referencePath)
     VizReads.globalDict = VizReads.refRDD.getSequenceDictionary
 
-    VizReads.readsData = AlignmentRecordMaterialization(sc, VizReads.globalDict, VizReads.partitionCount, VizReads.refRDD)
+    VizReads.readsData = new AlignmentRecordTile(sc, VizReads.globalDict, VizReads.partitionCount, VizReads.refRDD)
+
     val readsPaths = Option(args.readsPaths)
     readsPaths match {
       case Some(_) => {
         VizReads.readsPaths = args.readsPaths.split(",").toList
         VizReads.readsExist = true
-        var sampNamesBuffer = new scala.collection.mutable.ListBuffer[String]
-        for (readsPath <- VizReads.readsPaths) {
-          if (ResourceUtils.isLocal(readsPath, sc)) {
-            if (readsPath.endsWith(".bam") || readsPath.endsWith(".sam")) {
-              val srf: SamReaderFactory = SamReaderFactory.make()
-              val samReader: SamReader = srf.open(new File(readsPath))
-              val rec: SAMRecord = samReader.iterator().next()
-              val sample = rec.getReadGroup.getSample
-              sampNamesBuffer += sample
-              VizReads.readsData.loadSample(readsPath, Option(sample))
-            } else if (readsPath.endsWith(".adam")) {
-              sampNamesBuffer += VizReads.readsData.loadADAMSample(readsPath)
-            } else {
-              log.info("WARNING: Invalid input for reads file on local fs")
-              println("WARNING: Invalid input for reads file on local fs")
-            }
-          } else {
-            if (readsPath.endsWith(".adam")) {
-              sampNamesBuffer += VizReads.readsData.loadADAMSample(readsPath)
-            } else {
-              log.info("WARNING: Invalid input for reads file on remote fs")
-              println("WARNING: Invalid input for reads file on remote fs")
-            }
-          }
-        }
-        VizReads.sampNames = sampNamesBuffer.toList
+        VizReads.sampNames = VizReads.readsData.init(VizReads.readsPaths)
       } case None => {
         log.info("WARNING: No reads file provided")
         println("WARNING: No reads file provided")
       }
     }
 
-    // preprocessing data
     val path = Option(args.preprocessPath)
     path match {
       case Some(_) =>
@@ -499,13 +422,9 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
             val line = r.split(",")
             try {
               val region = ReferenceRegion(line(0), line(1).toLong, line(2).toLong)
-              val rdd = VizReads.readsData.multiget(region,
-                VizReads.sampNames)
-              val recordCount = rdd match {
-                case Some(_) => rdd.get.count
-                case None    => 0
-              }
-              log.info("records preprocessed: ", region, recordCount)
+              println("preprocessing...")
+              VizReads.readsData.get(region,
+                Some(VizReads.sampNames))
             } catch {
               case e: Exception => log.warn("preprocessing file requires format referenceName,start,end")
             }

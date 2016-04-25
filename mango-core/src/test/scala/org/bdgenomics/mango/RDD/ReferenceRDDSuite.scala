@@ -15,30 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bdgenomics.mango.models
+
+package org.bdgenomics.mango.RDD
 
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary, SequenceRecord }
-import org.bdgenomics.mango.util.MangoFunSuite
+import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.util.ADAMFunSuite
 
-class FrequencyMaterializationSuite extends MangoFunSuite {
-  val binSize = 2
+class ReferenceRDDSuite extends ADAMFunSuite {
 
-  val chrM = resourcePath("mouse_chrM.bam")
-  val chrM_cov = resourcePath("mouse_chrM.bam")
-  val chunkSize = 1000
+  def getDataCountFromBamFile(file: String, viewRegion: ReferenceRegion): Long = {
+    sc.loadIndexedBam(file, viewRegion).count
+  }
+
   val sd = new SequenceDictionary(Vector(SequenceRecord("chr1", 2000L),
     SequenceRecord("chrM", 20000L),
     SequenceRecord("20", 90000L)))
 
-  sparkTest("get frequency from file that is not precomputed") {
-    val sample = "C57BL/6J"
-    val region = ReferenceRegion("chrM", 1, 1000)
-    val freq = new FrequencyMaterialization(sc, sd, chunkSize)
-    freq.loadSample(chrM, sample)
+  // test alignment data
+  val bamFile = resourcePath("mouse_chrM.bam")
 
-    val results = freq.get(region, List(sample))
-    val size = region.end - region.start + 1
+  // test reference data
+  var referencePath = resourcePath("mm10_chrM.fa")
 
+  sparkTest("test ReferenceRDD creation") {
+    val refRDD = new ReferenceRDD(sc, referencePath)
   }
 
 }
