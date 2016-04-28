@@ -12,7 +12,7 @@
 <html xmlns="http://www.w3.org/1999/html">
 
 <% render("templates/head.ssp") %>
-<% render("navigation/navigation.ssp") %>
+<% render("navigation/navigation.ssp", Map("page" -> "reads")) %>
 <% render("navigation/panAndZoom.ssp", Map("page" -> "reads")) %>
 
 <div class="main">

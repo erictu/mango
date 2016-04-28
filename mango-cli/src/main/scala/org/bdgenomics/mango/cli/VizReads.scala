@@ -73,7 +73,6 @@ object VizReads extends BDGCommandCompanion with Logging {
   val commandDescription: String = "Genomic visualization for ADAM"
 
   var sc: SparkContext = null
-  var sqlContext: SQLContext = null
   var faWithIndex: Option[IndexedFastaSequenceFile] = None
   var partitionCount: Int = 0
   var referencePath: String = ""
@@ -307,8 +306,7 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val results = VizReads.varData.getFreq(viewRegion)
-      write(results)
+      write(VizReads.varData.getFreq(viewRegion))
     }
   }
 
@@ -363,6 +361,39 @@ class VizServlet extends ScalatraServlet {
     //else
     VizReads.refRDD.get(viewRegion)
   }
+
+  //uncomment out for actual application
+  //  get("/prefetchvfreq/:ref") {
+  after("/variantfreq/:ref") {
+    println("IN PREFETCH FREQ")
+    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+    val matSize = 100001L
+    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+    println("pretching freq:...")
+    println(left)
+    println(right)
+    VizReads.varData.fetchVarFreqData(left, true)
+    VizReads.varData.fetchVarFreqData(right, true)
+  }
+
+  //uncomment out for actual application
+  //  get("/prefetchvariants/:ref") {
+  after("/variants/:ref") {
+    println("IN PREFETCH VAR")
+    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+    val matSize = 1001L
+    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+    println("prefetching var:...")
+    println(left)
+    println(right)
+    VizReads.varData.fetchVarData(left, true)
+    VizReads.varData.fetchVarData(right, true)
+  }
+
 }
 
 class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizReadsArgs] with Logging {
@@ -370,7 +401,6 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
 
   override def run(sc: SparkContext): Unit = {
     VizReads.sc = sc
-    VizReads.sqlContext = new SQLContext(sc)
 
     VizReads.partitionCount =
       if (args.partitionCount <= 0)
