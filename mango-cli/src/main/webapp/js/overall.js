@@ -37,9 +37,9 @@ function render(refName, start, end, mapQuality) {
   }
 
   // Variants
-  if (variantsExist) {
-    renderVariants(refName, start, end);
-  }
+  //if (variantsExist) {
+  //  renderVariants(refName, start, end);
+  //}
 
   // Reads and Coverage
   if (readsExist) {

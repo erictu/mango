@@ -13,9 +13,9 @@ function renderVariants(refName, start, end) {
   varJsonLocation = "/variants/" + refName + "?start=" + start + "&end=" + end;
   varFreqJsonLocation = "/variantfreq/" + refName + "?start=" + start + "&end=" + end;
   setGlobalReferenceRegion(refName, start, end);
-  renderVariantFrequency;
+  renderVariantFrequency();
   if ((end - start) <= 1000) {
-    renderJsonVariants
+    renderJsonVariants();
   }
 
 }
@@ -142,18 +142,22 @@ function renderVariantFrequency() {
     .orient("left")
     .ticks(10, "%");
 
+
   d3.json(varFreqJsonLocation, function(error, data) {
     if (error) throw error;
     if (!isValidHttpResponse(data)) {
+      stopWait("#varFreqArea");
       return;
     }
+
+    console.log(svg.selectAll(".axis"));
+    svg.selectAll(".axis").remove();
 
     data = data.map(JSON.parse);
     y.domain([0, d3.max(data, function(d) { return d.count; })]);
 
-    svg.select(".axis").remove();
     svg.append("g")
-      .attr("class", "x axis")
+      .attr("class", "axis")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis);
 
@@ -199,6 +203,7 @@ function renderVariantFrequency() {
     var removedBars = freqBars.exit();
     removedBars.remove();
 
+    stopWait("#varFreqArea");
     var prefetch = "/prefetchvfreq/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
     d3.json(prefetch, function(error, data) {});
     
