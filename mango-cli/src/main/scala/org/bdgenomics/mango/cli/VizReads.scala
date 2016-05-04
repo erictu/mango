@@ -362,6 +362,18 @@ class VizServlet extends ScalatraServlet {
     VizReads.refRDD.get(viewRegion)
   }
 
+
+  after("/mergedReads/:ref") {
+    println("IN PREFETCH FREQ")
+    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+    val matSize = 100001L
+    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+    VizReads.readsData.get(left)
+    VizReads.readsData.get(right)
+  }
+
   //uncomment out for actual application
   //  get("/prefetchvfreq/:ref") {
   after("/variantfreq/:ref") {
