@@ -178,11 +178,13 @@ class VizServlet extends ScalatraServlet {
           val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
           val sampleIds: List[String] = params("sample").split(",").toList
           val readQuality = params.getOrElse("quality", "0")
-          val dataOption = VizReads.readsData.get(viewRegion, Some(sampleIds)).asInstanceOf[Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]]]
+          val dataOption = VizReads.readsData.layer0.multiget(viewRegion, sampleIds).asInstanceOf[Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]]]
           dataOption match {
             case Some(_) => {
               val filteredData =
-                AlignmentRecordFilter.filterByRecordQuality(dataOption.get.toRDD(), readQuality).collect
+                AlignmentRecordFilter.filterByRecordQuality(dataOption.get.toRDD(), readQuality)
+                  .filter(_._2.mismatches != None).collect
+
               val jsonData: Map[String, SampleTrack] = AlignmentRecordLayout(filteredData, sampleIds)
               var readRetJson: String = ""
               for (sample <- sampleIds) {
