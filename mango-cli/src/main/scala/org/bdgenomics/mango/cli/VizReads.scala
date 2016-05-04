@@ -99,11 +99,7 @@ object VizReads extends BDGCommandCompanion with Logging {
   def apply(cmdLine: Array[String]): BDGCommand = {
     new VizReads(Args4j[VizReadsArgs](cmdLine))
   }
-<<<<<<< HEAD
-  
-=======
 
->>>>>>> f2728f5... completed convolution
   /**
    * Returns stringified version of sequence dictionary
    *
@@ -187,10 +183,11 @@ class VizServlet extends ScalatraServlet {
           val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
           val sampleIds: List[String] = params("sample").split(",").toList
           val readQuality = params.getOrElse("quality", "0")
-          val dataOption = VizReads.readsData.get(viewRegion, Some(sampleIds)).asInstanceOf[Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]]]
+          val dataOption = VizReads.readsData.layer0.multiget(viewRegion, sampleIds).asInstanceOf[Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]]]
           dataOption match {
             case Some(_) => {
               val jsonData: Map[String, SampleTrack] = AlignmentRecordLayout(dataOption.get.toRDD().collect, sampleIds)
+
               var readRetJson: String = ""
               for (sample <- sampleIds) {
                 val sampleData = jsonData.get(sample)
