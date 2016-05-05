@@ -34,12 +34,16 @@ function render(refName, start, end, mapQuality) {
   // Features
   if (featuresExist) {
     renderFeatures(refName, start, end);
+  } else {
+    $("#featArea").css( ' display', 'none' );
   }
 
   // Variants
   //if (variantsExist) {
   //  renderVariants(refName, start, end);
   //}
+
+  $("#varArea").css( 'display', 'none');
 
   // Reads and Coverage
   if (readsExist) {
