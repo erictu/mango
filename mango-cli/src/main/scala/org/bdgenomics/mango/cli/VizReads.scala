@@ -402,7 +402,6 @@ class VizServlet extends ScalatraServlet {
   //    VizReads.varData.fetchVarData(right, true)
   //  }
 
-
 }
 
 class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizReadsArgs] with Logging {

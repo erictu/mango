@@ -120,8 +120,8 @@ function renderJsonVariants() {
     var removed = variants.exit();
     removed.remove();
 
-    var prefetch = "/prefetchvariants/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-    d3.json(prefetch, function(error, data) {});
+    //var prefetch = "/prefetchvariants/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+    //d3.json(prefetch, function(error, data) {});
 
   });
 }
@@ -217,8 +217,8 @@ function renderVariantFrequency() {
     removedBars.remove();
 
     stopWait("#varFreqArea");
-    var prefetch = "/prefetchvfreq/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-    d3.json(prefetch, function(error, data) {});
+    //var prefetch = "/prefetchvfreq/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+    //d3.json(prefetch, function(error, data) {});
     
   });
 }

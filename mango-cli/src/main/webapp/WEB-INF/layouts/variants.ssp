@@ -12,7 +12,7 @@
           <div class="graphArea" id="refArea"></div>
           <div class="graphArea" id="varFreqArea"></div>
             <div class="sampleLegend">
-                <div class='col-md-3'>
+                <div class='col-md-3' style="float:right">
                     <input  value="viewVariants"
                         name="viewVariants"
                         type="checkbox"
