@@ -25,21 +25,18 @@ import net.liftweb.json.Serialization.write
 import org.apache.parquet.filter2.dsl.Dsl._
 import org.apache.parquet.filter2.predicate.FilterPredicate
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{ Logging, SparkContext }
 import org.bdgenomics.adam.models.{ ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.projections.{ FeatureField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
-import org.bdgenomics.formats.avro.{ Feature, Genotype }
+import org.bdgenomics.formats.avro.Feature
 import org.bdgenomics.mango.RDD.ReferenceRDD
-import org.bdgenomics.mango.core.util.{ VizUtils }
+import org.bdgenomics.mango.core.util.VizUtils
 import org.bdgenomics.mango.filters.AlignmentRecordFilter
 import org.bdgenomics.mango.layout._
-import org.bdgenomics.mango.models.GenotypeMaterialization
 import org.bdgenomics.mango.tiling.AlignmentRecordTile
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
-import org.apache.spark.sql.{ DataFrame, SQLContext }
 import org.fusesource.scalate.TemplateEngine
 import org.kohsuke.args4j.{ Argument, Option => Args4jOption }
 import org.scalatra.ScalatraServlet
@@ -358,10 +355,8 @@ class VizServlet extends ScalatraServlet {
   get("/reference/:ref") {
     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref"))))
-    if (viewRegion.end - viewRegion.start > 2000)
-      write("")
-    else
-      VizReads.refRDD.get(viewRegion)
+    if (viewRegion.end - viewRegion.start > 2000) write("")
+    else write(VizReads.refRDD.get(viewRegion))
   }
 
   //  after("/mergedReads/:ref") {
