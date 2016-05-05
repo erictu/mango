@@ -358,10 +358,10 @@ class VizServlet extends ScalatraServlet {
   get("/reference/:ref") {
     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref"))))
-    //    if (viewRegion.end - viewRegion.start > 2000)
-    //      write("")
-    //else
-    VizReads.refRDD.get(viewRegion)
+    if (viewRegion.end - viewRegion.start > 2000)
+      write("")
+    else
+      VizReads.refRDD.get(viewRegion)
   }
 
   //  after("/mergedReads/:ref") {
