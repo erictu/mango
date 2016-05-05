@@ -15,6 +15,15 @@ var sDict;
 //Manages changes when clicking checkboxes
 d3.selectAll("input").on("change", checkboxChange);
 
+// send pixel size for bining and initialize autocomplete and refVis
+var initJson =  "/init/" + Math.round($(".samples").width());
+d3.json(initJson, function(error, seqDict) {
+  sDict=seqDict;
+  autoComplete(seqDict);
+  refVis(sDict);
+});
+
+
 // Create the scale for the axis
 var refAxisScale = d3.scale.linear()
     .domain([viewRegStart, viewRegEnd])
@@ -61,12 +70,16 @@ function render(refName, start, end, mapQuality) {
   // Features
   if (featuresExist) {
     renderFeatures(refName, start, end);
+  } else {
+    $("#featArea").css( ' display', 'none' );
   }
 
   // Variants
   //if (variantsExist) {
   //  renderVariants(refName, start, end);
   //}
+
+  $("#varArea").css( 'display', 'none');
 
   // Reads and Coverage
   if (readsExist) {

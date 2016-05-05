@@ -37,9 +37,4 @@
 <script src="js/variants.js"></script>
 <script src="js/formSubmit.js"></script>
 <script src="js/reference.js"></script>
-<script>
-  // renderVariantFrequency(viewRefName, viewRegStart, viewRegEnd);
-  renderVariants(viewRefName, viewRegStart, viewRegEnd);
-  // renderReference(viewRefName, viewRegStart, viewRegEnd);
-</script>
 </html>
