@@ -63,7 +63,7 @@
 
 <script src="js/reads.js"></script>
 <script src="js/freq.js"></script>
-<script src="js/variants.js"></script>
+<%--<script src="js/variants.js"></script>--%>
 <script src="js/reference.js"></script>
 <script src="js/overall.js"></script>
 
