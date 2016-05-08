@@ -344,49 +344,53 @@ class VizServlet extends ScalatraServlet {
      else Ok(VizReads.refRDD.get(viewRegion))
   }
 
-  //  after("/mergedReads/:ref") {
-  //    println("IN PREFETCH FREQ")
-  //    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //    val matSize = 1001L
-  //    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-  //    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-  //    VizReads.readsData.get(left)
-  //    VizReads.readsData.get(right)
-  //  }
+  get("/prefetchMergedReads/:ref") {
+    val matSize = 2000L
+    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+    contentType = "json"
+    val dictOpt = VizReads.globalDict(viewRegion.referenceName)
+    dictOpt match {
+      case Some(_) => {
+        val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+        val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+        val sampleIds: List[String] = params("sample").split(",").toList
+        VizReads.readsData.get(left, Some(sampleIds))
+        VizReads.readsData.get(right, Some(sampleIds))
+      } case None => // Do Nothing
+    }
 
-  //uncomment out for actual application
-  //  get("/prefetchvfreq/:ref") {
-  //  after("/variantfreq/:ref") {
-  //    println("IN PREFETCH FREQ")
-  //    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //    val matSize = 100001L
-  //    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-  //    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-  //    println("pretching freq:...")
-  //    println(left)
-  //    println(right)
-  //    VizReads.varData.fetchVarFreqData(left, true)
-  //    VizReads.varData.fetchVarFreqData(right, true)
-  //  }
-
-  //uncomment out for actual application
-  //  get("/prefetchvariants/:ref") {
-  //  after("/variants/:ref") {
-  //    println("IN PREFETCH VAR")
-  //    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //    val matSize = 1001L
-  //    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-  //    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-  //    println("prefetching var:...")
-  //    println(left)
-  //    println(right)
-  //    VizReads.varData.fetchVarData(left, true)
-  //    VizReads.varData.fetchVarData(right, true)
-  //  }
-
+  }
+  //
+  //    get("/prefetchvfreq/:ref") {
+  //    after("/variantfreq/:ref") {
+  //      println("IN PREFETCH FREQ")
+  //      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //        VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //      val matSize = 100001L
+  //      val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+  //      val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+  //      println("pretching freq:...")
+  //      println(left)
+  //      println(right)
+  //      VizReads.varData.fetchVarFreqData(left, true)
+  //      VizReads.varData.fetchVarFreqData(right, true)
+  //    }
+  //
+  //    get("/prefetchvariants/:ref") {
+  //    after("/variants/:ref") {
+  //      println("IN PREFETCH VAR")
+  //      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //        VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //      val matSize = 1001L
+  //      val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+  //      val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+  //      println("prefetching var:...")
+  //      println(left)
+  //      println(right)
+  //      VizReads.varData.fetchVarData(left, true)
+  //      VizReads.varData.fetchVarData(right, true)
+  //    }
 
 }
 
