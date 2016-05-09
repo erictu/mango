@@ -100,7 +100,7 @@ object MergedAlignmentRecordLayout extends Logging {
 
     // collect and reduce mismatches for each sample
     val mismatches: RDD[(String, List[MisMatch])] = rdd
-      .map(r => (r._2.record.getRecordGroupSample, r._2.mismatches.get))
+      .map(r => (r._2.record.getRecordGroupSample, r._2.mismatches))
       .reduceByKey(_ ++ _) // list of [sample, mismatches]
 
     // reduce point mismatches by start and end value
@@ -235,5 +235,5 @@ case class SampleTrack(val records: List[ReadJson], val matePairs: List[MatePair
 // untracked json classes
 case class MatePair(start: Long, end: Long)
 
-case class CalculatedAlignmentRecord(record: AlignmentRecord, mismatches: Option[List[MisMatch]] = None)
+case class CalculatedAlignmentRecord(record: AlignmentRecord, mismatches: List[MisMatch] = None)
 

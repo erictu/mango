@@ -239,20 +239,15 @@ class VizServlet extends ScalatraServlet {
   get("/mergedReads/:ref") {
     VizTimers.AlignmentRequest.time {
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
-
       contentType = "json"
+
       val dictOpt = VizReads.globalDict(viewRegion.referenceName)
-      dictOpt match {
-        case Some(_) => {
-          if (viewRegion.end > dictOpt.get.length) {
-            VizReads.errors.outOfBounds
-          }
-          val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
-          val sampleIds: List[String] = params("sample").split(",").toList
-          Ok(VizReads.readsData.get(viewRegion, Some(sampleIds)))
-        } case None => VizReads.errors.outOfBounds
-      }
-    }
+
+      // if region is in bounds of reference, return data
+      if (dictOpt.isDefined && viewRegion.end > dictOpt.get.length) {
+        val sampleIds: List[String] = params("sample").split(",").toList
+        Ok(VizReads.readsData.get(viewRegion, Some(sampleIds)))
+      } else VizReads.errors.outOfBounds
   }
 
   get("/overall") {
@@ -341,10 +336,13 @@ class VizServlet extends ScalatraServlet {
       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref"))))
     if (viewRegion.end - viewRegion.start > 2000)
       VizReads.errors.largeRegion
-     else Ok(VizReads.refRDD.get(viewRegion))
+    else {
+      val d = VizReads.refRDD.get(viewRegion)
+      Ok(write(d))
+    }
   }
 
-  get("/prefetchMergedReads/:ref") {
+  after("/mergedReads/:ref") {
     val matSize = 2000L
     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
@@ -451,27 +449,26 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
      * Initialize loaded variant files
      */
     def initVariants = {
-      VizReads.variantData = GenotypeMaterialization(sc, VizReads.globalDict, VizReads.partitionCount)
       val variantsPath = Option(args.variantsPaths)
       variantsPath match {
         case Some(_) => {
           VizReads.variantsPaths = args.variantsPaths.split(",").toList
           VizReads.variantsExist = true
           for (varPath <- VizReads.variantsPaths) {
-            if (varPath.endsWith(".vcf")) {
-              VizReads.variantData.loadSample(varPath)
-            } else if (varPath.endsWith(".adam")) {
-              VizReads.variantData.loadSample(varPath)
+            if (varPath.endsWith(".adam")) {
+              VizReads.varData = new VariantLayout(VizReads.sc)
+              VizReads.varData.loadChr(varPath)
             } else {
               log.info("WARNING: Invalid input for variants file")
+              println("WARNING: Invalid input for variants file")
             }
           }
         }
         case None => {
           log.info("WARNING: No variants file provided")
+          println("WARNING: No variants file provided")
         }
       }
-
     }
 
     /*

@@ -112,8 +112,8 @@ function renderLowResRef(data, refContainer, refDiv) {
       return xAxisScale(d[0]);
     })
     .attr("width", function(d) {
-    if (d[0] < 0) return refWidth;
-    else return Math.max(1, refWidth/(viewRegEnd-viewRegStart));
+    if (d[0] < 0) return width;
+    else return Math.max(1, width/(viewRegEnd-viewRegStart));
     })
     .attr("fill", function(d) {
       if (d[1] === "N") return nColor;
@@ -135,8 +135,8 @@ function renderLowResRef(data, refContainer, refDiv) {
       else return baseColors[d[1]];
     })
     .attr("width", function(d) {
-      if (d[0] < 0) return refWidth;
-      else return Math.max(1, refWidth/(viewRegEnd-viewRegStart));
+      if (d[0] < 0) return width;
+      else return Math.max(1, width/(viewRegEnd-viewRegStart));
     })
     .attr("height", refHeight)
     .on("click", function(d) {

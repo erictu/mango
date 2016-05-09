@@ -45,7 +45,7 @@ class ReferenceRDD(sc: SparkContext, referencePath: String) extends LayeredTile 
     if (referencePath.endsWith(".fa") || referencePath.endsWith(".fasta") || referencePath.endsWith(".adam")) {
       val sequences = sc.loadSequences(referencePath)
       chunkSize = sequences.first.getFragmentLength
-      val refRDD: IntervalRDD[ReferenceRegion, Map[Int, Array[Byte]]] = IntervalRDD(sequences.map(r => (ReferenceRegion(r.getContig.getContigName, r.getFragmentStartPosition, r.getFragmentStartPosition + r.getFragmentLength), r.getFragmentSequence)))
+      val refRDD: IntervalRDD[ReferenceRegion, Map[Int, Array[Byte]]] = IntervalRDD(sequences.map(r => (ReferenceRegion(r.getContig.getContigName, r.getFragmentStartPosition, r.getFragmentStartPosition + r.getFragmentLength), r.getFragmentSequence.toUpperCase)))
         .mapValues(r => (r._1, ConvolutionalSequence.convolveToEnd(r._2, LayeredTile.layerCount)))
 
       refRDD.persist(StorageLevel.MEMORY_AND_DISK)

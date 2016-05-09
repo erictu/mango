@@ -1,4 +1,4 @@
-<%@ val page: String %>
+<%@ val isOverall: Boolean %>
 <div id = "navigation">
     <ul>
         <li>move:</li>
@@ -64,7 +64,7 @@
             region:
             <input id="autocomplete" type="text" name="info" size="20" class="alignment-search form-control" placeholder="sample:refName:start-end">
         </li>
-        #if (page == "reads")
+        #if (isOverall)
             <li>mapping quality:</li>
             <li><input type="range" name="quality" id="quality" min="0" max="100"></li>
             <li>
@@ -75,8 +75,7 @@
                 class="btn btn-danger btn-xs"/>
                 </form>
             </li>
-        #end
-        #if (page == "variants")
+        #else
             <li>
                 <input name="Submit button"
                 type="button"

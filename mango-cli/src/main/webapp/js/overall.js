@@ -38,12 +38,10 @@ function render(refName, start, end, mapQuality) {
     $("#featArea").css( ' display', 'none' );
   }
 
-  // Variants
-  //if (variantsExist) {
-  //  renderVariants(refName, start, end);
-  //}
-
-  $("#varArea").css( 'display', 'none');
+//  // Variants
+//  if (variantsExist) {
+//    renderVariants(refName, start, end);
+//  } else }
 
   // Reads and Coverage
   if (readsExist) {

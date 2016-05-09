@@ -80,8 +80,6 @@ function renderMergedReads(refName, start, end, quality) {
 
     }
     stopWait("#readsArea");
-    var prefetch = "/prefetchMergedReads/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd+ "&sample=" + sampleIds;
-    d3.json(prefetch, function(error, data) {});
   });
 
     var keys = Object.keys(readAlignmentSvgContainer);
