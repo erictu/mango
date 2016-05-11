@@ -129,7 +129,7 @@ class VariantLayout(sc: SparkContext) extends Logging {
             val data = filt.filter(filt("variant__start") >= reg.start && filt("variant__start") <= reg.end)
             wsetVar = wsetVar.unionAll(data)
             varBook.rememberValues(reg, "all") //TODO: contains all the samples right now
-            wsetVar.cache
+            // wsetVar.cache
             if (prefetch) wsetVar.count
           }
         }
