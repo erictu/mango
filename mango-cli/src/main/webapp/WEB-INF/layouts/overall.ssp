@@ -7,9 +7,9 @@
 <html xmlns="http://www.w3.org/1999/html">
 <% render("templates/head.ssp") %>
 <% render("navigation/navigation.ssp", Map("isOverall" -> true)) %>
-<% render("navigation/panAndZoom.ssp") %>
-
+<% render("navigation/panAndZoom.ssp", Map("page" -> "reads")) %>
 <% render("templates/sidebar.ssp") %>
+
 
 <div class="main">
     <div id="home">
@@ -27,8 +27,8 @@
         #end
         #if (readsExist)
             <div class="graphArea" id="readsArea">
-                <% readsSamples.get.foreach(s =>
-                    render("templates/reads.ssp", Map("sample" -> s, "id" -> s.replace("/","")))) %>
+            <% readsSamples.get.foreach(s =>
+                render("templates/reads.ssp", Map("sample" -> s, "id" -> s.replace("/","")))) %>
             </div>
         #end
     </div>
