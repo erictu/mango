@@ -13,6 +13,10 @@ function renderVariants(refName, start, end) {
   varJsonLocation = "/variants/" + refName + "?start=" + start + "&end=" + end;
   varFreqJsonLocation = "/variantfreq/" + refName + "?start=" + start + "&end=" + end;
   setGlobalReferenceRegion(refName, start, end);
+  // Reference
+  renderReference(refName, start, end, function(valid){
+    toggleContent(valid);
+  });
   renderVariantFrequency;
   if ((end - start) <= 1000) {
     renderJsonVariants
