@@ -164,7 +164,7 @@ class AlignmentRecordLayout(values: Array[(ReferenceRegion, CalculatedAlignmentR
   val sequence = values
   var trackBuilder = new ListBuffer[ReadsTrackBuffer]()
 
-  val readPairs = sequence.groupBy(_._2.record.getReadName).values.toList.sortBy(r => r.map(_._2.mismatches.get.length).sum)
+  val readPairs = sequence.groupBy(_._2.record.getReadName).values.toList.sortBy(r => r.map(_._2.mismatches.length).sum)
 
   addTracks
   trackBuilder = trackBuilder.filter(_.records.nonEmpty)
@@ -235,5 +235,5 @@ case class SampleTrack(val records: List[ReadJson], val matePairs: List[MatePair
 // untracked json classes
 case class MatePair(start: Long, end: Long)
 
-case class CalculatedAlignmentRecord(record: AlignmentRecord, mismatches: List[MisMatch] = None)
+case class CalculatedAlignmentRecord(record: AlignmentRecord, mismatches: List[MisMatch])
 
