@@ -128,35 +128,35 @@ class LazyMaterializationSuite extends MangoFunSuite {
 
   }
 
-  sparkTest("Get data for variants") {
-    val region = new ReferenceRegion("chrM", 0L, 100L)
-    val lazyMat = GenotypeMaterialization(sc, sd, 10)
-    lazyMat.loadSample(vcfFile)
+  // sparkTest("Get data for variants") {
+  //   val region = new ReferenceRegion("chrM", 0L, 100L)
+  //   val lazyMat = GenotypeMaterialization(sc, sd, 10)
+  //   lazyMat.loadSample(vcfFile)
 
-    val results = lazyMat.get(region, vcfFile).get
-    assert(results.count == 3)
+  //   val results = lazyMat.get(region, vcfFile).get
+  //   assert(results.count == 3)
 
-  }
+  // }
 
-  sparkTest("Merge Regions") {
-    val r1 = new ReferenceRegion("chr1", 0, 999)
-    val r2 = new ReferenceRegion("chr1", 1000, 1999)
-    val lazyMat = GenotypeMaterialization(sc, sd, 10)
+  // sparkTest("Merge Regions") {
+  //   val r1 = new ReferenceRegion("chr1", 0, 999)
+  //   val r2 = new ReferenceRegion("chr1", 1000, 1999)
+  //   val lazyMat = GenotypeMaterialization(sc, sd, 10)
 
-    val merged = Bookkeep.mergeRegions(Option(List(r1, r2))).get
-    assert(merged.size == 1)
-    assert(merged.head.start == 0 && merged.head.end == 1999)
-  }
+  //   val merged = Bookkeep.mergeRegions(Option(List(r1, r2))).get
+  //   assert(merged.size == 1)
+  //   assert(merged.head.start == 0 && merged.head.end == 1999)
+  // }
 
-  sparkTest("Merge Regions with gap") {
-    val r1 = new ReferenceRegion("chr1", 0, 999)
-    val r2 = new ReferenceRegion("chr1", 1000, 1999)
-    val r3 = new ReferenceRegion("chr1", 3000, 3999)
-    val lazyMat = GenotypeMaterialization(sc, sd, 10)
+  // sparkTest("Merge Regions with gap") {
+  //   val r1 = new ReferenceRegion("chr1", 0, 999)
+  //   val r2 = new ReferenceRegion("chr1", 1000, 1999)
+  //   val r3 = new ReferenceRegion("chr1", 3000, 3999)
+  //   val lazyMat = GenotypeMaterialization(sc, sd, 10)
 
-    val merged = Bookkeep.mergeRegions(Option(List(r1, r2, r3))).get
-    assert(merged.size == 2)
-    assert(merged.head.end == 1999 && merged.last.end == 3999)
-  }
+  //   val merged = Bookkeep.mergeRegions(Option(List(r1, r2, r3))).get
+  //   assert(merged.size == 2)
+  //   assert(merged.head.end == 1999 && merged.last.end == 3999)
+  // }
 
 }
