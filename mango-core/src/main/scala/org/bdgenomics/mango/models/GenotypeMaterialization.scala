@@ -25,6 +25,7 @@ import org.apache.spark.storage.StorageLevel
 import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion, SequenceDictionary }
 import org.bdgenomics.adam.projections.{ GenotypeField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
+import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.mango.util.Bookkeep
 import org.bdgenomics.utils.intervalrdd.IntervalRDD
@@ -45,22 +46,28 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
   val bookkeep = new Bookkeep(chunkSize)
 
   def loadAdam(region: ReferenceRegion, fp: String): RDD[Genotype] = {
-    val pred: FilterPredicate = ((LongColumn("variant.end") >= region.start) && (LongColumn("variant.start") <= region.end) && (BinaryColumn("variant.contig.contigName") === (region.referenceName)))
-    val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
-    sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
+    val pred: FilterPredicate = ((LongColumn("end") >= region.start) && (LongColumn("start") <= region.end) && (BinaryColumn("contigName") === (region.referenceName)))
+    //TODO: put projections in once adam changes are in
+    // val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
+    // sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
+    println(region)
+    println(fp)
+    val genes = sc.loadParquetGenotypes(fp, predicate = Some(pred))
+    genes
   }
 
   override def getFileReference(fp: String): String = {
     fp
   }
 
-  override def loadFromFile(region: ReferenceRegion, k: String): RDD[Genotype] = {
+  def loadFromFile(region: ReferenceRegion, k: String): RDD[Genotype] = {
     if (!fileMap.containsKey(k)) {
       log.error("Key not in FileMap")
       null
     }
     val fp = fileMap(k)
     if (fp.endsWith(".adam")) {
+      println("LOADING FROM ADAM")
       loadAdam(region, fp)
     } else if (fp.endsWith(".vcf")) {
       sc.loadGenotypes(fp).filterByOverlappingRegion(region)
@@ -87,7 +94,7 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
         val start = Math.min(region.start, end)
         val reg = new ReferenceRegion(region.referenceName, start, end)
         ks.map(k => {
-          val data = loadFromFile(reg, k)
+          val data = loadFromFile(region, k)
             .map(r => (ReferenceRegion(ReferencePosition(r)), r))
             .partitionBy(partitioner)
           if (intRDD == null) {

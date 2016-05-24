@@ -81,7 +81,8 @@ object VizReads extends BDGCommandCompanion with Logging {
   var globalDict: SequenceDictionary = null
   var refRDD: ReferenceMaterialization = null
   var readsData: AlignmentRecordMaterialization = null
-  var varData: VariantLayout = null
+  var variantData: GenotypeMaterialization = null
+  var varData: VariantFrame = null
   var server: org.eclipse.jetty.server.Server = null
   var screenSize: Int = 1000
   var chunkSize: Long = 5000
@@ -118,6 +119,7 @@ object VizReads extends BDGCommandCompanion with Logging {
           log.info("Server has stopped")
         } catch {
           case e: Exception => {
+            println("Error when stopping Jetty server: " + e.getMessage, e)
             log.info("Error when stopping Jetty server: " + e.getMessage, e)
           }
         }
@@ -156,7 +158,7 @@ class VizReadsArgs extends Args4jBase with ParquetArgs {
   var testMode: Boolean = false
 }
 
-class VizServlet extends ScalatraServlet {
+class VizServlet extends ScalatraServlet with Logging {
   implicit val formats = net.liftweb.json.DefaultFormats
 
   get("/?") {
@@ -256,12 +258,41 @@ class VizServlet extends ScalatraServlet {
     session("end") = VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)).toString
   }
 
+  //DataFrame implementation
+
+  // get("/variants/:ref") {
+  //   VizTimers.VarRequest.time {
+  //     contentType = "json"
+  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //     write(VizReads.varData.get(viewRegion))
+  //   }
+  // }
+
+  // get("/variantfreq/:ref") {
+  //   VizTimers.VarFreqRequest.time {
+  //     contentType = "json"
+  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //     write(VizReads.varData.getFreq(viewRegion))
+  //   }
+  // }
+
   get("/variants/:ref") {
     VizTimers.VarRequest.time {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      write(VizReads.varData.get(viewRegion))
+      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
+      variantRDDOption match {
+        case Some(_) => {
+          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
+          write(VariantLayout(variantRDD))
+        } case None => {
+          write("")
+        }
+      }
+
     }
   }
 
@@ -270,7 +301,15 @@ class VizServlet extends ScalatraServlet {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      write(VizReads.varData.getFreq(viewRegion))
+      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
+      variantRDDOption match {
+        case Some(_) => {
+          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
+          write(VariantFreqLayout(variantRDD))
+        } case None => {
+          write("")
+        }
+      }
     }
   }
 
@@ -403,7 +442,7 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
     }
 
     /*
-     * Initialize loaded variant files
+     * Initialize loaded variant files for DataFrames
      */
     def initVariants() = {
       VizReads.variantData = GenotypeMaterialization(sc, VizReads.globalDict, VizReads.partitionCount)
@@ -414,15 +453,44 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
           VizReads.variantsExist = true
           for (varPath <- VizReads.variantsPaths) {
             if (varPath.endsWith(".adam")) {
-              VizReads.varData = new VariantLayout(VizReads.sc)
+              VizReads.varData = new VariantFrame(VizReads.sc)
               VizReads.varData.loadChr(varPath)
             } else {
-              log.info("WARNING: Invalid input for variants file")
               println("WARNING: Invalid input for variants file")
+              log.info("WARNING: Invalid input for variants file")
             }
           }
         }
         case None => {
+          println("WARNING: No variant file provided")
+          log.info("WARNING: No variants file provided")
+        }
+      }
+    }
+
+    /*
+     * Initialize loaded variant files for RDD
+     */
+    def initVariantsRDD = {
+      VizReads.variantData = GenotypeMaterialization(sc, VizReads.globalDict, VizReads.partitionCount)
+      val variantsPath = Option(args.variantsPaths)
+      variantsPath match {
+        case Some(_) => {
+          VizReads.variantsPaths = args.variantsPaths.split(",").toList
+          VizReads.variantsExist = true
+          for (varPath <- VizReads.variantsPaths) {
+            if (varPath.endsWith(".vcf")) {
+              VizReads.variantData.loadSample(varPath)
+            } else if (varPath.endsWith(".adam")) {
+              VizReads.variantData.loadSample(varPath)
+            } else {
+              println("WARNING: Invalid input for variants file")
+              log.info("WARNING: Invalid input for variants file")
+            }
+          }
+        }
+        case None => {
+          println("WARNING: No variants file provided")
           log.info("WARNING: No variants file provided")
         }
       }
@@ -440,11 +508,13 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
             VizReads.featuresExist = true
           } else {
             VizReads.featuresExist = false
+            println("WARNING: Invalid input for features file")
             log.info("WARNING: Invalid input for features file")
           }
         }
         case None => {
           VizReads.featuresExist = false
+          println("WARNING: No features file provided")
           log.info("WARNING: No features file provided")
         }
       }
