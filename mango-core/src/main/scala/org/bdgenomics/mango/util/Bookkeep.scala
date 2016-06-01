@@ -36,8 +36,10 @@ class Bookkeep(chunkSize: Int) {
   */
   def rememberValues(region: ReferenceRegion, ks: List[String]): Unit = {
     if (bookkeep.contains(region.referenceName)) {
+      println("INSERTING INTO TREE")
       bookkeep(region.referenceName).insert(region, ks.toIterator)
     } else {
+      println("MAKING NEW TREE")
       val newTree = new IntervalTree[ReferenceRegion, String]()
       newTree.insert(region, ks.toIterator)
       bookkeep += ((region.referenceName, newTree))

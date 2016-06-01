@@ -30,13 +30,13 @@ object VariantLayout extends Logging {
   /**
    * An implementation of Variant Layout
    *
-   * @param rdd: RDD of (ReferenceRegion, Genotype) tuples
+   * @param rdd: RDD of Genotype
    * @return List of VariantJsons
    */
-  def apply(rdd: RDD[(ReferenceRegion, Genotype)]): List[VariantJson] = {
-    val trackedData = rdd.mapPartitions(VariantLayout(_)).collect
-    val variantData = trackedData.zipWithIndex
-    variantData.flatMap(r => VariantJson(r._1.records, r._2)).toList
+  def apply(rdd: RDD[Genotype]): List[VariantJson] = {
+    val variantData: RDD[((String, Iterable[Genotype]), Long)] = rdd.groupBy(_.getSampleId).zipWithIndex()
+    variantData.flatMap(recs => recs._1._2.map(r => new VariantJson(r.getContigName, r.getSampleId, r.getAlleles.mkString(","),
+      r.getStart, r.getEnd, recs._2))).collect.toList
   }
 
   /**
@@ -48,6 +48,7 @@ object VariantLayout extends Logging {
   def apply(iter: Iterator[(ReferenceRegion, Genotype)]): Iterator[GenericTrack[Genotype]] = {
     new VariantLayout(iter).collect
   }
+
 }
 
 object VariantFreqLayout extends Logging {
@@ -58,8 +59,9 @@ object VariantFreqLayout extends Logging {
    * @param rdd: RDD of (ReferenceRegion, Genotype) tuples
    * @return List of VariantFreqJsons
    */
-  def apply(rdd: RDD[(ReferenceRegion, Genotype)]): List[VariantFreqJson] = {
-    val variantFreq = rdd.map(rec => ((rec._2.getVariant.getStart, rec._2.getVariant.getEnd), rec._2)).countByKey
+  def apply(rdd: RDD[Genotype]): List[VariantFreqJson] = {
+    val keyed: RDD[(Long, String)] = rdd.map(r => Tuple2(r.getStart, r.getAlleles.mkString(",")))
+    val variantFreq = keyed.countByValue()
     var freqJson = new ListBuffer[VariantFreqJson]
     for (rec <- variantFreq) {
       freqJson += VariantFreqJson(rec._1._1, rec._1._2, rec._2)
@@ -106,4 +108,4 @@ object VariantJson {
 
 // tracked json objects for genotype visual data
 case class VariantJson(contigName: String, sampleId: String, alleles: String, start: Long, end: Long, track: Long)
-case class VariantFreqJson(start: Long, end: Long, count: Long)
+case class VariantFreqJson(start: Long, alleles: String, count: Long)

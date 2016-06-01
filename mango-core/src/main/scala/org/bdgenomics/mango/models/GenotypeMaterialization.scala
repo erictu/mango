@@ -28,6 +28,7 @@ import org.bdgenomics.adam.projections.{ GenotypeField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.adam.rdd.variation._
 import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.mango.tiling.VariantTile
 import org.bdgenomics.mango.util.Bookkeep
 
 import scala.reflect.ClassTag
@@ -36,7 +37,7 @@ import scala.reflect.ClassTag
  * Handles loading and tracking of data from persistent storage into memory for Genotype data.
  * @see LazyMaterialization.scala
  */
-class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int, chunkS: Int) extends LazyMaterialization[Genotype, Genotype] {
+class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int, chunkS: Int) extends LazyMaterialization[Genotype, VariantTile] {
 
   val sc = s
   val dict = d
@@ -47,11 +48,8 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
 
   def loadAdam(region: ReferenceRegion, fp: String): RDD[Genotype] = {
     val pred: FilterPredicate = ((LongColumn("end") >= region.start) && (LongColumn("start") <= region.end) && (BinaryColumn("contigName") === (region.referenceName)))
-    //TODO: put projections in once adam changes are in
-    // val proj = Projection(GenotypeField.variant, GenotypeField.alleles, GenotypeField.sampleId)
-    // sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
-    println(region)
-    println(fp)
+    val proj = Projection(GenotypeField.start, GenotypeField.end, GenotypeField.alleles, GenotypeField.sampleId)
+    sc.loadParquetGenotypes(fp, predicate = Some(pred), projection = Some(proj))
     val genes = sc.loadParquetGenotypes(fp, predicate = Some(pred))
     genes
   }
@@ -94,14 +92,15 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
         val start = Math.min(region.start, end)
         val reg = new ReferenceRegion(region.referenceName, start, end)
         ks.map(k => {
-          val data = loadFromFile(region, k)
-            .map(r => (ReferenceRegion(ReferencePosition(r)), r))
-            .partitionBy(partitioner)
+          val data = loadFromFile(reg, k)
+          //TODO: add partitioner?
+          println(reg)
+          val tiles = Array((region, new VariantTile(data.collect)))
           if (intRDD == null) {
-            intRDD = IntervalRDD(data)
+            intRDD = IntervalRDD(sc.parallelize(tiles))
             intRDD.persist(StorageLevel.MEMORY_AND_DISK)
           } else {
-            intRDD = intRDD.multiput(data)
+            intRDD = intRDD.multiput(tiles)
             intRDD.persist(StorageLevel.MEMORY_AND_DISK)
           }
         })
@@ -114,7 +113,7 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
 object GenotypeMaterialization {
 
   def apply(sc: SparkContext, dict: SequenceDictionary, partitions: Int): GenotypeMaterialization = {
-    new GenotypeMaterialization(sc, dict, partitions, 1000)
+    new GenotypeMaterialization(sc, dict, partitions, 100)
   }
 
   def apply[T: ClassTag, C: ClassTag](sc: SparkContext, dict: SequenceDictionary, partitions: Int, chunkSize: Int): GenotypeMaterialization = {

@@ -89,16 +89,24 @@ abstract class LazyMaterialization[T: ClassTag, S: ClassTag] extends Serializabl
   def multiget(region: ReferenceRegion, ks: List[String]): Option[IntervalRDD[ReferenceRegion, S]] = {
     val seqRecord = dict(region.referenceName)
     val regionsOpt = bookkeep.getMaterializedRegions(region, ks)
+    //    println(regionsOpt.get)
     seqRecord match {
       case Some(_) =>
         regionsOpt match {
           case Some(_) =>
             for (r <- regionsOpt.get) {
+              println("PUTTING NEW")
+              println(r)
               put(r, ks)
             }
           case None =>
+            println("ALREADY FETCHED")
           // DO NOTHING
         }
+        //        println("in multiget")
+        //        println(region)
+        //        intRDD.collect.foreach(println(_))
+        //        intRDD.filterByInterval(region).collect.foreach(println(_))
         Option(intRDD.filterByInterval(region))
       case None =>
         None
