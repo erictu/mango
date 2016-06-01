@@ -27,6 +27,7 @@ import org.bdgenomics.adam.models.{ ReferencePosition, ReferenceRegion, Sequence
 import org.bdgenomics.adam.projections.{ GenotypeField, Projection }
 import org.bdgenomics.adam.rdd.ADAMContext._
 import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.mango.tiling.VariantTile
 import org.bdgenomics.mango.util.Bookkeep
 
 import scala.reflect.ClassTag
@@ -35,7 +36,7 @@ import scala.reflect.ClassTag
  * Handles loading and tracking of data from persistent storage into memory for Genotype data.
  * @see LazyMaterialization.scala
  */
-class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int, chunkS: Int) extends LazyMaterialization[Genotype, Genotype] {
+class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int, chunkS: Int) extends LazyMaterialization[Genotype, VariantTile] {
 
   val sc = s
   val dict = d
@@ -88,13 +89,13 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
         val reg = new ReferenceRegion(region.referenceName, start, end)
         ks.map(k => {
           val data = loadFromFile(reg, k)
-            .map(r => (ReferenceRegion(ReferencePosition(r)), r))
-            .partitionBy(partitioner)
+          //            .partitionBy(partitioner) //TODO: get rid of this
+          val tiles = Array((region, new VariantTile(data.collect)))
           if (intRDD == null) {
-            intRDD = IntervalRDD(data)
+            intRDD = IntervalRDD(sc.parallelize(tiles))
             intRDD.persist(StorageLevel.MEMORY_AND_DISK)
           } else {
-            intRDD = intRDD.multiput(data)
+            intRDD = intRDD.multiput(tiles)
             intRDD.persist(StorageLevel.MEMORY_AND_DISK)
           }
         })

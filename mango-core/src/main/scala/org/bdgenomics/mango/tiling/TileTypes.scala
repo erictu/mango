@@ -17,6 +17,7 @@
  */
 package org.bdgenomics.mango.tiling
 
+import org.bdgenomics.formats.avro.Genotype
 import org.bdgenomics.mango.layout.{ CalculatedAlignmentRecord, ConvolutionalSequence }
 
 case class AlignmentRecordTile(alignments: Array[CalculatedAlignmentRecord],
@@ -40,4 +41,22 @@ case class AlignmentRecordTile(alignments: Array[CalculatedAlignmentRecord],
 case class ReferenceTile(sequence: String) extends LayeredTile[String] with Serializable {
   val rawData = sequence
   val layerMap = ConvolutionalSequence.convolveToEnd(sequence, LayeredTile.layerCount)
+}
+
+case class VariantTile(variants: Array[Genotype]) extends LayeredTile[Array[Genotype]] with Serializable {
+  val rawData = variants
+
+  L0.maxSize = 500
+  L1.maxSize = 1000
+  L2.maxSize = 5000
+  L3.maxSize = 10000
+  L4.maxSize = 100000
+
+  //TODO: Is this byte necessary?
+  val layer1 = rawData.filter(r => r.getVariant.getStart % L1.stride == 0).map(_.toString.toByte)
+  val layer2 = rawData.filter(r => r.getVariant.getStart % L2.stride == 0).map(_.toString.toByte)
+  val layer3 = rawData.filter(r => r.getVariant.getStart % L3.stride == 0).map(_.toString.toByte)
+  val layer4 = rawData.filter(r => r.getVariant.getStart % L4.stride == 0).map(_.toString.toByte)
+
+  val layerMap: Map[Int, Array[Byte]] = Map(1 -> layer1, 2 -> layer2, 3 -> layer3, 4 -> layer4)
 }

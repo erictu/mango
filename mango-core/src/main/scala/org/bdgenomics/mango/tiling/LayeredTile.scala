@@ -151,10 +151,10 @@ trait Layer extends Serializable {
 /* For raw data */
 object L0 extends Layer {
   val id = 0
-  val maxSize = 5000L
-  val range = (0L, maxSize)
-  val patchSize = 0
-  val stride = 0
+  var maxSize = 5000L
+  var range = (0L, maxSize)
+  var patchSize = 0
+  var stride = 0
 
   def fromCharBytes(arr: Array[Byte]): String = arr.map(_.toChar).mkString
 }
@@ -162,35 +162,35 @@ object L0 extends Layer {
 /* For objects 5000 to 10000 */
 object L1 extends Layer {
   val id = 1
-  val maxSize = 10000L
-  val range = (5000L, maxSize)
-  val patchSize = 10
-  val stride = 10
+  var maxSize = 10000L
+  var range = (5000L, maxSize)
+  var patchSize = 10
+  var stride = 10
 }
 
 /* For objects 10,000 to 100,000 */
 object L2 extends Layer {
   val id = 2
-  val maxSize = 100000L
-  val range = (L1.maxSize, maxSize)
-  val patchSize = 100
-  val stride = patchSize
+  var maxSize = 100000L
+  var range = (L1.maxSize, maxSize)
+  var patchSize = 100
+  var stride = patchSize
 }
 
 /* For objects 100,000 to 1,000,000 */
 object L3 extends Layer {
   val id = 3
-  val maxSize = 1000000L
-  val range = (L2.maxSize, maxSize)
-  val patchSize = 1000
-  val stride = patchSize
+  var maxSize = 1000000L
+  var range = (L2.maxSize, maxSize)
+  var patchSize = 1000
+  var stride = patchSize
 }
 
 /* For objects 1000000 + */
 object L4 extends Layer {
   val id = 4
-  val maxSize = 10000000L
-  val range = (L3.maxSize, maxSize)
-  val patchSize = 10000
-  val stride = patchSize
+  var maxSize = 10000000L
+  var range = (L3.maxSize, maxSize)
+  var patchSize = 10000
+  var stride = patchSize
 }
