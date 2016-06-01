@@ -82,7 +82,6 @@ object VizReads extends BDGCommandCompanion with Logging {
   var refRDD: ReferenceMaterialization = null
   var readsData: AlignmentRecordMaterialization = null
   var variantData: GenotypeMaterialization = null
-  var varData: VariantFrame = null
   var server: org.eclipse.jetty.server.Server = null
   var screenSize: Int = 1000
   var chunkSize: Long = 5000
@@ -258,57 +257,27 @@ class VizServlet extends ScalatraServlet with Logging {
     session("end") = VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)).toString
   }
 
-  //DataFrame implementation
-
-  // get("/variants/:ref") {
-  //   VizTimers.VarRequest.time {
-  //     contentType = "json"
-  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //     write(VizReads.varData.get(viewRegion))
-  //   }
-  // }
-
-  // get("/variantfreq/:ref") {
-  //   VizTimers.VarFreqRequest.time {
-  //     contentType = "json"
-  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //     write(VizReads.varData.getFreq(viewRegion))
-  //   }
-  // }
-
   get("/variants/:ref") {
     VizTimers.VarRequest.time {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantLayout(variantRDD))
-        } case None => {
-          write("")
-        }
-      }
+      if (viewRegion.length() >= 1000) { //Too large to see raw data, will cause memory errors
+        write("") //TODO: replace with errors.largeRegion
+      } else {
+        val isRaw =
+          try {
+            params("isRaw").toBoolean
+          } catch {
+            case e: Exception => false
+          }
+        val dictOpt = VizReads.globalDict(viewRegion.referenceName) //TODO: but this may not contain data
+        if (dictOpt.isDefined && viewRegion.end <= dictOpt.get.length) {
+          val sampleIds: List[String] = params("sample").split(",").toList
+          val data = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths, isRaw)
+          Ok(data)
+        } else VizReads.errors.outOfBounds
 
-    }
-  }
-
-  get("/variantfreq/:ref") {
-    VizTimers.VarFreqRequest.time {
-      contentType = "json"
-      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-        VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantFreqLayout(variantRDD))
-        } case None => {
-          write("")
-        }
       }
     }
   }
@@ -352,34 +321,6 @@ class VizServlet extends ScalatraServlet with Logging {
     else {
       Ok(write(VizReads.refRDD.getReferenceString(viewRegion)))
     }
-  }
-
-  get("/prefetchvfreq/:ref") {
-    println("IN PREFETCH FREQ")
-    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-    val matSize = 100001L
-    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-    println("pretching freq:...")
-    println(left)
-    println(right)
-    VizReads.varData.fetchVarFreqData(left, true)
-    VizReads.varData.fetchVarFreqData(right, true)
-  }
-
-  get("/prefetchvariants/:ref") {
-    println("IN PREFETCH VAR")
-    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-    val matSize = 1001L
-    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-    println("prefetching var:...")
-    println(left)
-    println(right)
-    VizReads.varData.fetchVarData(left, true)
-    VizReads.varData.fetchVarData(right, true)
   }
 
 }

@@ -73,7 +73,6 @@ trait KTiles[T <: KLayeredTile] extends Serializable {
    * @param region
    * @param ks: ks to processes
    * @param isRaw: Boolean to force data formatting to layer 0
-   *
    * @return byte data from aggregated layers keyed by String id
    */
   def get(region: ReferenceRegion, ks: List[String], isRaw: Boolean = false): RDD[(String, Iterable[Any])] = {
@@ -136,4 +135,3 @@ abstract class KLayeredTile extends Serializable with Logging {
     m.filter(r => ks.contains(r._1))
   }
 }
-

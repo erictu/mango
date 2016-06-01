@@ -75,7 +75,8 @@ function renderJsonVariants() {
             return '#990000'; //RED
           }
         })
-        .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
+        //.attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
+        .attr("width", (function(d) { return Math.max(1,1*(width/(viewRegEnd-viewRegStart))); }))
         .attr("height", trackHeight)
         .on("click", function(d) {
           varDiv.transition()
@@ -107,8 +108,9 @@ function renderJsonVariants() {
     var removed = variants.exit();
     removed.remove();
 
-    var prefetch = "/prefetchvariants/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-    d3.json(prefetch, function(error, data) {});
+    //prefetching code
+    //var prefetch = "/prefetchvariants/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+    //d3.json(prefetch, function(error, data) {});
 
   });
 }
@@ -175,14 +177,14 @@ function renderVariantFrequency() {
 
     var modifyBars = freqBars.transition();
     modifyBars
-      .attr("x", (function(d) { return xAxisScale(d.variant__start); }))
+      .attr("x", (function(d) { return xAxisScale(d.start); }))
       .attr("width", (function() { return Math.max(1, (width/(viewRegEnd-viewRegStart))); }));
 
     var newBars = freqBars.enter();
     newBars.append("rect")
       .attr("class", "bar")
       .attr("fill", '#2E6DA4')
-      .attr("x", (function(d) { return xAxisScale(d.variant__start); }))
+      .attr("x", (function(d) { return xAxisScale(d.start); }))
       .attr("width", (function() { return Math.max(1, (width/(viewRegEnd-viewRegStart))); }))
       .attr("y", function(d) { return y(d.count); })
       .attr("height", function(d) { return height - y(d.count); })
@@ -191,7 +193,7 @@ function renderVariantFrequency() {
           .duration(200)
           .style("opacity", .9);
         varDiv.html("Samples with variant: " + d.count + "<br>" +
-          "Position: " + d.variant__start)
+          "Position: " + d.start)
           .style("left", d3.event.pageX + "px")
           .style("top", d3.event.pageY + "px");
       })

@@ -41,6 +41,5 @@ object AlignmentRecordTile {
     val layer1 = rawData.mapValues(rs => PointMisMatch(rs.flatMap(_.mismatches).toList))
 
     new AlignmentRecordTile(Map(0 -> rawData, 1 -> layer1))
-
   }
 }

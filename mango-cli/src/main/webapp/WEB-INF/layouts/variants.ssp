@@ -1,6 +1,4 @@
 <%@ val viewRegion: (String, String, String) %>
-<% attributes("page") = "variants" %>
-
 
 <html>
     <% render("templates/head.ssp")%>
