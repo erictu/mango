@@ -36,8 +36,10 @@ class Bookkeep(chunkSize: Int) {
   */
   def rememberValues(region: ReferenceRegion, ks: List[String]): Unit = {
     if (bookkeep.contains(region.referenceName)) {
+      println("INSERTING INTO TREE")
       bookkeep(region.referenceName).insert(region, ks.toIterator)
     } else {
+      println("MAKING NEW TREE")
       val newTree = new IntervalTree[ReferenceRegion, String]()
       newTree.insert(region, ks.toIterator)
       bookkeep += ((region.referenceName, newTree))
@@ -95,6 +97,21 @@ class Bookkeep(chunkSize: Int) {
 
 }
 object Bookkeep {
+
+  def unmergeRegions(region: ReferenceRegion, chunkSize: Int): List[ReferenceRegion] = {
+    var regions: ListBuffer[ReferenceRegion] = new ListBuffer[ReferenceRegion]()
+    var start = region.start / chunkSize * chunkSize
+    var end = start + (chunkSize - 1)
+
+    while (start <= region.end) {
+      val r = new ReferenceRegion(region.referenceName, start, end)
+      regions += r
+      start += chunkSize
+      end += chunkSize
+    }
+
+    regions.toList
+  }
 
   /**
    * generates a list of closely overlapping regions, counting for gaps in the list

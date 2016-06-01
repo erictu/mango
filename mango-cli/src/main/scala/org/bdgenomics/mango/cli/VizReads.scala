@@ -34,6 +34,7 @@ import org.bdgenomics.mango.RDD.{ ReferenceRDD, VariantFrame }
 import org.bdgenomics.mango.core.util.{ ResourceUtils, VizUtils }
 import org.bdgenomics.mango.layout._
 import org.bdgenomics.mango.models.{ AlignmentRecordMaterialization, GenotypeMaterialization }
+import org.bdgenomics.mango.tiling.VariantTile
 import org.bdgenomics.utils.cli._
 import org.bdgenomics.utils.instrumentation.Metrics
 import org.bdgenomics.utils.misc.Logging
@@ -213,25 +214,6 @@ class VizServlet extends ScalatraServlet with Logging {
     }
   }
 
-  get("/freq/:ref") {
-    VizTimers.AlignmentRequest.time {
-      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
-      contentType = "json"
-      val dictOpt = VizReads.globalDict(viewRegion.referenceName)
-      dictOpt match {
-        case Some(_) => {
-          if (viewRegion.end > dictOpt.get.length) {
-            write("")
-          }
-          val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
-          val region = new ReferenceRegion(params("ref").toString, params("start").toLong, end)
-          val sampleIds: List[String] = params("sample").split(",").toList
-          Ok(write(VizReads.readsData.getFrequency(region, sampleIds)))
-        } case None => VizReads.errors.outOfBounds
-      }
-    }
-  }
-
   get("/mergedReads/:ref") {
     VizTimers.AlignmentRequest.time {
       contentType = "json"
@@ -336,32 +318,22 @@ class VizServlet extends ScalatraServlet with Logging {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantLayout(variantRDD))
-        } case None => {
-          write("")
-        }
-      }
+      if (viewRegion.length() >= 1000) { //Too large to see raw data, will cause memory errors
+        write("") //TODO: replace with errors.largeRegion
+      } else {
+        val isRaw =
+          try {
+            params("isRaw").toBoolean
+          } catch {
+            case e: Exception => false
+          }
+        val dictOpt = VizReads.globalDict(viewRegion.referenceName) //TODO: but this may not contain data
+        if (dictOpt.isDefined && viewRegion.end <= dictOpt.get.length) {
+          val sampleIds: List[String] = params("sample").split(",").toList
+          val data = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths, isRaw)
+          Ok(data)
+        } else VizReads.errors.outOfBounds
 
-    }
-  }
-
-  get("/variantfreq/:ref") {
-    VizTimers.VarFreqRequest.time {
-      contentType = "json"
-      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-        VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantFreqLayout(variantRDD))
-        } case None => {
-          write("")
-        }
       }
     }
   }
@@ -413,33 +385,34 @@ class VizServlet extends ScalatraServlet with Logging {
     }
   }
 
-  get("/prefetchvfreq/:ref") {
-    println("IN PREFETCH FREQ")
-    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-    val matSize = 100001L
-    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-    println("pretching freq:...")
-    println(left)
-    println(right)
-    VizReads.varData.fetchVarFreqData(left, true)
-    VizReads.varData.fetchVarFreqData(right, true)
-  }
+  // Prefetching for DataFrame implementation only
+  // get("/prefetchvfreq/:ref") {
+  //   println("IN PREFETCH FREQ")
+  //   val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //     VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //   val matSize = 100001L
+  //   val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+  //   val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+  //   println("pretching freq:...")
+  //   println(left)
+  //   println(right)
+  //   VizReads.varData.fetchVarFreqData(left, true)
+  //   VizReads.varData.fetchVarFreqData(right, true)
+  // }
 
-  get("/prefetchvariants/:ref") {
-    println("IN PREFETCH VAR")
-    val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-      VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-    val matSize = 1001L
-    val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
-    val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
-    println("prefetching var:...")
-    println(left)
-    println(right)
-    VizReads.varData.fetchVarData(left, true)
-    VizReads.varData.fetchVarData(right, true)
-  }
+  // get("/prefetchvariants/:ref") {
+  //   println("IN PREFETCH VAR")
+  //   val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //     VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //   val matSize = 1001L
+  //   val left = ReferenceRegion(viewRegion.referenceName, math.max(viewRegion.start - matSize, 0L), viewRegion.start)
+  //   val right = ReferenceRegion(viewRegion.referenceName, viewRegion.end, VizUtils.getEnd(viewRegion.end + matSize, VizReads.globalDict(params("ref").toString)))
+  //   println("prefetching var:...")
+  //   println(left)
+  //   println(right)
+  //   VizReads.varData.fetchVarData(left, true)
+  //   VizReads.varData.fetchVarData(right, true)
+  // }
 
 }
 
@@ -459,7 +432,7 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
     initReference
     initAlignments
     initVariantsRDD //TODO: test which implementation works better
-    // initVariants
+    // initVariants //DataFrame implementation
     initFeatures
 
     // run preprocessing if preprocessing file was provided

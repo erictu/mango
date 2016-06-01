@@ -57,15 +57,3 @@ function saveRegion(viewRefName, viewRegStart, viewRegEnd) {
   var saveJsonLocation = "/viewregion/" + viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
   d3.json(saveJsonLocation, function(error, data) {});
 }
-
-function toggleContent(validContent) {
-  if (validContent) {
-    $("#home").css("display", "none");
-    $("#tracks").css("display", "block");
-  } else {
-    $("#home").css("display", "block");
-    $("#tracks").css("display", "none");
-  }
-
-
-}

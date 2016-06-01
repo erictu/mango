@@ -78,7 +78,17 @@ function checkboxChange() {
   }
 }
 
-var re = /(?:\.([^.]+))?$/;
+function toggleContent(validContent) {
+    if (validContent) {
+        $("#home").css("display", "none");
+        $("#tracks").css("display", "block");
+    } else {
+        $("#home").css("display", "block");
+        $("#tracks").css("display", "none");
+    }
+}
+
+    var re = /(?:\.([^.]+))?$/;
 
 // Upload new file
 $("#loadFile:file").change(function(){

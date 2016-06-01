@@ -113,7 +113,7 @@ class AlignmentRecordMaterialization(s: SparkContext,
     AlignmentRecordMaterialization.loadAlignmentData(sc: SparkContext, region, fp)
   }
 
-  override def get(region: ReferenceRegion, k: String): Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]] = {
+  def get(region: ReferenceRegion, k: String): Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]] = {
     multiget(region, List(k))
   }
 
@@ -123,7 +123,7 @@ class AlignmentRecordMaterialization(s: SparkContext,
 	* Otherwise call put on the sections of data that don't exist
 	* Here, ks, is an option of list of personids (String)
 	*/
-  override def multiget(region: ReferenceRegion, ks: List[String]): Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]] = {
+  def multiget(region: ReferenceRegion, ks: List[String]): Option[IntervalRDD[ReferenceRegion, CalculatedAlignmentRecord]] = {
     val seqRecord = dict(region.referenceName)
     val regionsOpt = bookkeep.getMaterializedRegions(region, ks)
     seqRecord match {

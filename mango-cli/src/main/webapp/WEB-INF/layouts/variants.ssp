@@ -1,11 +1,9 @@
 <%@ val viewRegion: (String, String, String) %>
-<% attributes("page") = "variants" %>
-
 
 <html>
     <% render("templates/head.ssp")%>
     <% render("navigation/navigation.ssp", Map("isOverall" -> false)) %>
-    <% render("navigation/panAndZoom.ssp") %>
+    <% render("navigation/panAndZoom.ssp", Map("page" -> "variants")) %>
 
     <div class="main">
           <div class="graphArea" id="refArea"></div>
