@@ -50,22 +50,17 @@ class VariantFrame(sc: SparkContext) extends Logging {
    * Stores the filemap of variant information for each chromosome. Each file is stored as a dataframe
    */
   def loadChr(filePath: String): Unit = {
-    println("loading")
-    println(filePath)
+    println("loading: " + filePath)
     val df: DataFrame = sqlContext.read.load(filePath)
     val chr: String = df.first.get(1).asInstanceOf[String] //TODO: should be contigName, correct based on schema
     //TODO: perform schema projection here instead of in the get functions?
-    println(fileMap.keySet)
     fileMap += ((chr, df))
-    println("after insert")
-    println(fileMap.keySet)
   }
 
   /*
    * Gets the dataframe associated with each file
    */
   def getDF(chr: String): Option[DataFrame] = {
-    println(fileMap)
     fileMap.get(chr)
   }
 
@@ -75,7 +70,6 @@ class VariantFrame(sc: SparkContext) extends Logging {
   def getFreq(region: ReferenceRegion): Array[String] = {
     if (fetchVarFreqData(region)) { //file exists for what we're querying for
       val binSize = VizUtils.getBinSize(region, 1000)
-      println(binSize)
       wsetFreq.filter(wsetFreq("start") >= region.start && wsetFreq("start") <= region.end
         && wsetFreq("start") % binSize === 0).toJSON.collect
     } else {
@@ -96,7 +90,6 @@ class VariantFrame(sc: SparkContext) extends Logging {
         val matRegions: Option[List[ReferenceRegion]] = freqBook.getMaterializedRegions(region, List("all"))
         if (matRegions.isDefined) {
           for (reg <- matRegions.get) {
-            println(region)
             val filt = df.get.select("start", "alleles")
             val counts = filt.filter(filt("start") >= reg.start && filt("start") <= reg.end).groupBy("start").count
             wsetFreq = wsetFreq.unionAll(counts)

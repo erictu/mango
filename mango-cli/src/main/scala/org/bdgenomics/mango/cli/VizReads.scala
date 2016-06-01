@@ -86,7 +86,7 @@ object VizReads extends BDGCommandCompanion with Logging {
   var refRDD: ReferenceRDD = null
   var readsData: AlignmentRecordMaterialization = null
   var variantData: GenotypeMaterialization = null
-  var varData: VariantFrame = null
+  var varData: Option[VariantFrame] = None
   var server: org.eclipse.jetty.server.Server = null
   var screenSize: Int = 1000
 
@@ -313,39 +313,12 @@ class VizServlet extends ScalatraServlet with Logging {
 
   //DataFrame implementation
 
-  // get("/variants/:ref") {
-  //   VizTimers.VarRequest.time {
-  //     contentType = "json"
-  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //     write(VizReads.varData.get(viewRegion))
-  //   }
-  // }
-
-  // get("/variantfreq/:ref") {
-  //   VizTimers.VarFreqRequest.time {
-  //     contentType = "json"
-  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-  //     write(VizReads.varData.getFreq(viewRegion))
-  //   }
-  // }
-
   get("/variants/:ref") {
     VizTimers.VarRequest.time {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantLayout(variantRDD))
-        } case None => {
-          write("")
-        }
-      }
-
+      write(VizReads.varData.get.get(viewRegion))
     }
   }
 
@@ -354,17 +327,45 @@ class VizServlet extends ScalatraServlet with Logging {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-      variantRDDOption match {
-        case Some(_) => {
-          val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
-          write(VariantFreqLayout(variantRDD))
-        } case None => {
-          write("")
-        }
-      }
+      write(VizReads.varData.get.getFreq(viewRegion))
     }
   }
+
+  //RDD implementation
+  // get("/variants/:ref") {
+  //   VizTimers.VarRequest.time {
+  //     contentType = "json"
+  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //     val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
+  //     variantRDDOption match {
+  //       case Some(_) => {
+  //         val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
+  //         write(VariantLayout(variantRDD))
+  //       } case None => {
+  //         write("")
+  //       }
+  //     }
+
+  //   }
+  // }
+
+  // get("/variantfreq/:ref") {
+  //   VizTimers.VarFreqRequest.time {
+  //     contentType = "json"
+  //     val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
+  //       VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
+  //     val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
+  //     variantRDDOption match {
+  //       case Some(_) => {
+  //         val variantRDD: RDD[(ReferenceRegion, Genotype)] = variantRDDOption.get.toRDD()
+  //         write(VariantFreqLayout(variantRDD))
+  //       } case None => {
+  //         write("")
+  //       }
+  //     }
+  //   }
+  // }
 
   get("/features/:ref") {
     if (!VizReads.featuresExist)
@@ -423,8 +424,8 @@ class VizServlet extends ScalatraServlet with Logging {
     println("pretching freq:...")
     println(left)
     println(right)
-    VizReads.varData.fetchVarFreqData(left, true)
-    VizReads.varData.fetchVarFreqData(right, true)
+    VizReads.varData.get.fetchVarFreqData(left, true)
+    VizReads.varData.get.fetchVarFreqData(right, true)
   }
 
   get("/prefetchvariants/:ref") {
@@ -437,8 +438,8 @@ class VizServlet extends ScalatraServlet with Logging {
     println("prefetching var:...")
     println(left)
     println(right)
-    VizReads.varData.fetchVarData(left, true)
-    VizReads.varData.fetchVarData(right, true)
+    VizReads.varData.get.fetchVarData(left, true)
+    VizReads.varData.get.fetchVarData(right, true)
   }
 
 }
@@ -458,8 +459,8 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
     // initialize all datasets
     initReference
     initAlignments
-    initVariantsRDD //TODO: test which implementation works better
-    // initVariants
+    //    initVariantsRDD //TODO: test which implementation works better
+    initVariants
     initFeatures
 
     // run preprocessing if preprocessing file was provided
@@ -534,8 +535,13 @@ class VizReads(protected val args: VizReadsArgs) extends BDGSparkCommand[VizRead
           VizReads.variantsExist = true
           for (varPath <- VizReads.variantsPaths) {
             if (varPath.endsWith(".adam")) {
-              VizReads.varData = new VariantFrame(VizReads.sc)
-              VizReads.varData.loadChr(varPath)
+              VizReads.varData match {
+                case Some(_) => VizReads.varData.get.loadChr(varPath)
+                case None => {
+                  VizReads.varData = Option(new VariantFrame(VizReads.sc))
+                  VizReads.varData.get.loadChr(varPath)
+                }
+              }
             } else {
               println("WARNING: Invalid input for variants file")
               log.info("WARNING: Invalid input for variants file")
