@@ -79,7 +79,8 @@ function renderJsonVariants() {
             return '#990000'; //RED
           }
         })
-        .attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
+        //.attr("width", (function(d) { return Math.max(1,(d.end-d.start)*(width/(viewRegEnd-viewRegStart))); }))
+        .attr("width", (function(d) { return Math.max(1,1*(width/(viewRegEnd-viewRegStart))); }))
         .attr("height", trackHeight)
         .on("click", function(d) {
           varDiv.transition()
