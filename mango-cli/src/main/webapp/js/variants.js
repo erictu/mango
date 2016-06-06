@@ -17,9 +17,9 @@ function renderVariants(refName, start, end) {
   renderReference(refName, start, end, function(valid){
     toggleContent(valid);
   });
-  renderVariantFrequency;
+  renderVariantFrequency();
   if ((end - start) <= 1000) {
-    renderJsonVariants
+    renderJsonVariants();
   }
 
 }
@@ -111,8 +111,9 @@ function renderJsonVariants() {
     var removed = variants.exit();
     removed.remove();
 
-    var prefetch = "/prefetchvariants/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-    d3.json(prefetch, function(error, data) {});
+    //prefetching code
+    //var prefetch = "/prefetchvariants/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+    //d3.json(prefetch, function(error, data) {});
 
   });
 }
@@ -152,7 +153,8 @@ function renderVariantFrequency() {
       return;
     }
 
-    data = data.map(JSON.parse);
+    //used before for dataframe
+    //data = data.map(JSON.parse);
     y.domain([0, d3.max(data, function(d) { return d.count; })]);
 
     svg.select(".axis").remove();
@@ -203,8 +205,9 @@ function renderVariantFrequency() {
     var removedBars = freqBars.exit();
     removedBars.remove();
 
-    var prefetch = "/prefetchvfreq/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
-    d3.json(prefetch, function(error, data) {});
+    //prefetching not enabled for now
+    //var prefetch = "/prefetchvfreq/"+ viewRefName + "?start=" + viewRegStart + "&end=" + viewRegEnd;
+    //d3.json(prefetch, function(error, data) {});
     
   });
 }

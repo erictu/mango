@@ -35,7 +35,7 @@ object VariantLayout extends Logging {
    */
   def apply(rdd: RDD[Genotype]): List[VariantJson] = {
     val variantData: RDD[((String, Iterable[Genotype]), Long)] = rdd.groupBy(_.getSampleId).zipWithIndex()
-    variantData.flatMap(recs => recs._1._2.map(r => new VariantJson(r.getContigName, r.getSampleId, r.getAlleles.mkString(","),
+    variantData.flatMap(recs => recs._1._2.map(r => new VariantJson(r.getContigName, r.getSampleId, r.getAlleles.mkString(" / "),
       r.getStart, r.getEnd, recs._2))).collect.toList
   }
 
@@ -60,7 +60,7 @@ object VariantFreqLayout extends Logging {
    * @return List of VariantFreqJsons
    */
   def apply(rdd: RDD[Genotype]): List[VariantFreqJson] = {
-    val keyed: RDD[(Long, String)] = rdd.map(r => Tuple2(r.getStart, r.getAlleles.mkString(",")))
+    val keyed: RDD[(Long, String)] = rdd.map(r => Tuple2(r.getStart, r.getAlleles.mkString(" / ")))
     val variantFreq = keyed.countByValue()
     var freqJson = new ListBuffer[VariantFreqJson]
     for (rec <- variantFreq) {
