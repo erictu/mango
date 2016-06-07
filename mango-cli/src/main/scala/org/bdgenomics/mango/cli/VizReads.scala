@@ -214,25 +214,6 @@ class VizServlet extends ScalatraServlet with Logging {
     }
   }
 
-  get("/freq/:ref") {
-    VizTimers.AlignmentRequest.time {
-      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong, params("end").toLong)
-      contentType = "json"
-      val dictOpt = VizReads.globalDict(viewRegion.referenceName)
-      dictOpt match {
-        case Some(_) => {
-          if (viewRegion.end > dictOpt.get.length) {
-            write("")
-          }
-          val end: Long = VizUtils.getEnd(viewRegion.end, VizReads.globalDict(viewRegion.referenceName))
-          val region = new ReferenceRegion(params("ref").toString, params("start").toLong, end)
-          val sampleIds: List[String] = params("sample").split(",").toList
-          Ok(write(VizReads.readsData.getFrequency(region, sampleIds)))
-        } case None => VizReads.errors.outOfBounds
-      }
-    }
-  }
-
   get("/mergedReads/:ref") {
     VizTimers.AlignmentRequest.time {
       contentType = "json"
@@ -337,9 +318,11 @@ class VizServlet extends ScalatraServlet with Logging {
       contentType = "json"
       val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
         VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      if ((viewRegion.end - viewRegion.start) >= 1000) { //Too large to see raw data, will cause memory errors
-        write("")
+      if (viewRegion.length() >= 1000) { //Too large to see raw data, will cause memory errors
+        write("") //TODO: replace with errors.largeRegion
       } else {
+        val dictOpt = VizReads.globalDict(viewRegion.referenceName) //TODO: but this may not contain data
+
         val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
         variantRDDOption match {
           case Some(_) => {
@@ -348,29 +331,6 @@ class VizServlet extends ScalatraServlet with Logging {
             println(variantTile.count)
             val genotypes: RDD[Genotype] = variantTile.map(_._2).flatMap(_.rawData) //right now only gets raw data
             write(VariantLayout(genotypes))
-          }
-          case None => {
-            write("")
-          }
-        }
-      }
-    }
-  }
-
-  get("/variantfreq/:ref") {
-    VizTimers.VarFreqRequest.time {
-      contentType = "json"
-      val viewRegion = ReferenceRegion(params("ref"), params("start").toLong,
-        VizUtils.getEnd(params("end").toLong, VizReads.globalDict(params("ref").toString)))
-      if ((viewRegion.end - viewRegion.start) >= 1000) { //Too large to see raw data, will cause memory errors
-        write("")
-      } else {
-        val variantRDDOption = VizReads.variantData.multiget(viewRegion, VizReads.variantsPaths)
-        variantRDDOption match {
-          case Some(_) => {
-            val variantTile: RDD[(ReferenceRegion, VariantTile)] = variantRDDOption.get.toRDD()
-            val genotypes: RDD[Genotype] = variantTile.map(_._2).flatMap(_.rawData) //right now gets only raw data
-            write(VariantFreqLayout(genotypes))
           }
           case None => {
             write("")

@@ -56,17 +56,13 @@ object VariantFreqLayout extends Logging {
   /**
    * An implementation of VariantFreqLayout
    *
-   * @param rdd: RDD of (ReferenceRegion, Genotype) tuples
    * @return List of VariantFreqJsons
    */
-  def apply(rdd: RDD[Genotype]): List[VariantFreqJson] = {
-    val keyed: RDD[(Long, String)] = rdd.map(r => Tuple2(r.getStart, r.getAlleles.mkString(" / ")))
-    val variantFreq = keyed.countByValue()
+  def apply(data: Iterable[Genotype]): List[(Long, String)] = {
+    val keyed: Iterable[(Long, String)] = data.map(r => (r.getStart.asInstanceOf[Long], r.getAlleles.mkString(" / ")))
+
     var freqJson = new ListBuffer[VariantFreqJson]
-    for (rec <- variantFreq) {
-      freqJson += VariantFreqJson(rec._1._1, rec._1._2, rec._2)
-    }
-    freqJson.toList
+    keyed.toList
   }
 
 }

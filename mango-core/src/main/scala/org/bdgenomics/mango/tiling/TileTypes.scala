@@ -17,23 +17,16 @@
  */
 package org.bdgenomics.mango.tiling
 
+import org.bdgenomics.adam.models.ReferenceRegion
 import org.bdgenomics.formats.avro.Genotype
+import org.bdgenomics.mango.layout.VariantFreqLayout
 
-case class VariantTile(variants: Array[Genotype]) extends LayeredTile[Genotype] with Serializable {
+case class VariantTile(variants: Iterable[Genotype], region: ReferenceRegion) extends LayeredTile[Genotype] with Serializable {
 
-  val rawData = variants
+  val rawData = variants //Genotype Data, already assigned to tracks
 
-  L0.maxSize = 500
-  L1.maxSize = 1000
-  L2.maxSize = 5000
-  L3.maxSize = 10000
-  L4.maxSize = 100000
+  val layer1 = VariantFreqLayout(rawData) //Frequency Data
 
-  val layer1 = rawData.filter(r => r.getVariant.getStart.asInstanceOf[Int] % L1.stride == 0)
-  val layer2 = rawData.filter(r => r.getVariant.getStart.asInstanceOf[Int] % L2.stride == 0)
-  val layer3 = rawData.filter(r => r.getVariant.getStart.asInstanceOf[Int] % L3.stride == 0)
-  val layer4 = rawData.filter(r => r.getVariant.getStart.asInstanceOf[Int] % L4.stride == 0)
-
-  val layerMap: Map[Int, Array[Genotype]] = Map(1 -> layer1, 2 -> layer2, 3 -> layer3, 4 -> layer4)
+  val layerMap: Map[Int, Iterable[(Long, String)]] = Map(1 -> layer1)
 
 }

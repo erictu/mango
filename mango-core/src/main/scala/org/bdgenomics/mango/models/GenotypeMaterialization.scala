@@ -54,9 +54,7 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
     genes
   }
 
-  override def getFileReference(fp: String): String = {
-    fp
-  }
+  override def getFileReference(fp: String): String = fp
 
   def loadFromFile(region: ReferenceRegion, k: String): RDD[Genotype] = {
     if (!fileMap.containsKey(k)) {
@@ -90,20 +88,43 @@ class GenotypeMaterialization(s: SparkContext, d: SequenceDictionary, parts: Int
         val end =
           Math.min(region.end, seqRecord.get.length)
         val start = Math.min(region.start, end)
-        val reg = new ReferenceRegion(region.referenceName, start, end)
+        val trimmedRegion = new ReferenceRegion(region.referenceName, start, end)
+        var data: RDD[Genotype] = sc.emptyRDD[Genotype]
+
+        //divide regions by chunksize
+        val c = chunkSize
+        val regions: List[ReferenceRegion] = Bookkeep.unmergeRegions(region, chunkSize)
+
         ks.map(k => {
-          val data = loadFromFile(reg, k)
-          //TODO: add partitioner?
-          println(reg)
-          val tiles = Array((region, new VariantTile(data.collect)))
-          if (intRDD == null) {
-            intRDD = IntervalRDD(sc.parallelize(tiles))
-            intRDD.persist(StorageLevel.MEMORY_AND_DISK)
-          } else {
-            intRDD = intRDD.multiput(tiles)
-            intRDD.persist(StorageLevel.MEMORY_AND_DISK)
-          }
+          val kdata = loadFromFile(trimmedRegion, k)
+          data = data.union(kdata)
         })
+
+        var mappedRecords: RDD[(ReferenceRegion, Genotype)] = sc.emptyRDD[(ReferenceRegion, Genotype)]
+
+        regions.foreach(r => {
+          val grouped = data.filter(vr => r.overlaps(ReferenceRegion(vr.getContigName, vr.getStart, vr.getEnd)))
+            .map(vr => (r, vr))
+          mappedRecords = mappedRecords.union(grouped)
+        })
+
+        val groupedRecords: RDD[(ReferenceRegion, Iterable[Genotype])] =
+          mappedRecords
+            .groupBy(_._1)
+            .map(r => (r._1, r._2.map(_._2)))
+        val tiles: RDD[(ReferenceRegion, VariantTile)] = groupedRecords.map(r => (r._1, VariantTile(r._2, trimmedRegion)))
+
+        // insert into IntervalRDD
+        if (intRDD == null) {
+          intRDD = IntervalRDD(tiles)
+          intRDD.persist(StorageLevel.MEMORY_AND_DISK)
+        } else {
+          val t = intRDD
+          intRDD = intRDD.multiput(tiles)
+          // TODO: can we do this incrementally instead?
+          t.unpersist(true)
+          intRDD.persist(StorageLevel.MEMORY_AND_DISK)
+        }
         bookkeep.rememberValues(region, ks)
       case None =>
     }

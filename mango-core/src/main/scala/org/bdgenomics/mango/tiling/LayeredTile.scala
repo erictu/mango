@@ -23,10 +23,10 @@ import org.bdgenomics.adam.models.ReferenceRegion
 import scala.reflect.ClassTag
 
 abstract class LayeredTile[S: ClassTag] extends Serializable with Logging {
-  def rawData: Array[S]
-  def layerMap: Map[Int, Array[S]]
+  def rawData: Iterable[S]
+  def layerMap: Map[Int, Any]
 
-  def getAggregated(region: ReferenceRegion): Array[S] = {
+  def getAggregated(region: ReferenceRegion): Any = {
     val size = region.length()
 
     size match {
